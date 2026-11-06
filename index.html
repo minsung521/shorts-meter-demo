@@ -401,14 +401,15 @@ function drawPin(cx, bottomY, alpha) {                 // 폰이 작아지면 '�
   ctx.save(); rr(px + 2.5, py + 2.5, pw - 5, ph - 5, 5); ctx.clip(); drawShort(px + 2.5, py + 2.5, pw - 5, ph - 5, 0); ctx.restore();
   ctx.restore();
 }
-function sticker(name, sub, cx, bottomY, alpha = 1, rot = -0.05) {   // 손으로 붙인 라벨
+function sticker(name, sub, cx, bottomY, alpha = 1, rot = -0.05) {   // 손으로 붙인 라벨 (이름 19px, 높이 15px)
   if (alpha < 0.03) return;
-  ctx.save(); ctx.globalAlpha = alpha; ctx.font = '14px Jua'; const w1 = ctx.measureText(name).width; ctx.font = '700 13px Gaegu'; const w2 = ctx.measureText(sub).width;
-  const w = Math.max(w1, w2) + 18, h = 38; ctx.translate(cx, bottomY - h / 2); ctx.rotate(rot);
-  ctx.fillStyle = '#fff'; rr(-w / 2, -h / 2, w, h, 8); ctx.fill(); ctx.strokeStyle = INK; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.save(); ctx.globalAlpha = alpha; ctx.font = '19px Jua'; const w1 = ctx.measureText(name).width; ctx.font = '700 15px Gaegu'; const w2 = ctx.measureText(sub).width;
+  const w = Math.max(w1, w2) + 22, h = 48; cx = Math.max(w / 2 + 6, Math.min(W - w / 2 - 6, cx));   // 화면 밖으로 안 나가게
+  ctx.translate(cx, bottomY - h / 2); ctx.rotate(rot);
+  ctx.fillStyle = '#fff'; rr(-w / 2, -h / 2, w, h, 10); ctx.fill(); ctx.strokeStyle = INK; ctx.lineWidth = 2; ctx.stroke();
   ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
-  ctx.fillStyle = INK; ctx.font = '14px Jua'; ctx.fillText(name, 0, -2);
-  ctx.fillStyle = ACC; ctx.font = '700 13px Gaegu'; ctx.fillText(sub, 0, 13);
+  ctx.fillStyle = INK; ctx.font = '19px Jua'; ctx.fillText(name, 0, 1);
+  ctx.fillStyle = ACC; ctx.font = '700 15px Gaegu'; ctx.fillText(sub, 0, 17);
   ctx.restore();
 }
 const FALL_MS = 380, MOTION = location.hash === '#fold' ? 'fold' : 'fade';   // 오브젝트 모션 (기본 fade, 주소에 #fold 붙이면 종이판)
