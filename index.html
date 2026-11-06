@@ -20,7 +20,7 @@
   html, body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Gaegu", sans-serif; letter-spacing: -0.05em; }   /* Gaegu는 기본 자간이 넓어 보여서 좁힘 */
   .lede, .intro .lede, .finale .fs, .hud .sub, .fileMeta, .anal-n, .range, .verdict, .foot { letter-spacing: -0.09em; word-spacing: 0.08em; }   /* Gaegu 본문: 글자 사이만 좁히고 단어 사이는 유지 */
   .btn, .q, h1, h2, h3, .fileName, .fileOk, .anal-t, .hud .alt, .finale .fn, .finale .pill, .ladder .n, .ladder .r { letter-spacing: -0.01em; }   /* Jua는 원래 자간 유지 */
-  .stage { position: relative; height: 100dvh; min-height: 560px; overflow: hidden; }
+  .stage { position: relative; height: var(--appH, 100dvh); min-height: 560px; overflow: hidden; }   /* 홈 화면 앱 모드에선 JS가 화면 전체 높이로 맞춤 */
   #cv { display: block; width: 100%; height: 100%; }
   .hud { position: absolute; left: 18px; top: calc(48px + env(safe-area-inset-top, 0px)); pointer-events: none; opacity: 0; transition: opacity .4s; }
   .hud.on { opacity: 1; }
@@ -642,6 +642,12 @@ window.__seek = t => { cancelAnimationFrame(raf); if (!data) data = { ...EXAMPLE
 window.__start = showStart;
 window.__setData = d => { data = d; };
 window.__thin = () => { const all = OBJECTS.filter(o => o.kind !== 'line' && o.h <= TL.dist); const sh = all.filter(o => TL.shown.has(o)); const ts = sh.map(o => passTime(o.h)); const gaps = ts.slice(1).map((t, i) => t - ts[i]); return { km: +(TL.dist / 1000).toFixed(2), sec: +(TL.climbEnd / 1000).toFixed(1), passed: all.length, shown: sh.length, minGap: Math.round(Math.min(...gaps)), names: sh.map(o => o.name).join(',') }; };
+// 아이폰 홈 화면 앱(standalone) + 반투명 상태바에선 100dvh가 상태바 높이만큼 짧게 잡혀 아래에 빈 띠가 남음 → 실제 화면 높이로 고정
+function fitStandalone() {
+  const sa = navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
+  if (sa) document.documentElement.style.setProperty('--appH', Math.max(innerHeight, screen.height) + 'px');
+}
+fitStandalone(); addEventListener('orientationchange', () => setTimeout(() => { fitStandalone(); layout(); }, 300));
 layout();
 Promise.all([document.fonts.load('18px Jua'), document.fonts.load('700 16px Gaegu')]).catch(() => {}).finally(() => showStart());
 SHORT_IMGS.forEach(im => im.onload = () => { if (!raf || arrived) frame(arrived ? TL.climbEnd + END_HOLD : 0); });
