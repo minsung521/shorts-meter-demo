@@ -503,8 +503,9 @@ function frame(t) {
   drawPhone(h, c, phoneA);
   drawPin(BARX(), yOf(h, c), 1 - phoneA);
   // HUD (배경 밝기에 따라 글자색 보간)
-  const col = rgb(inkOn(skyAt(Math.max(0, altAtY(90, c)))));
-  const hud = $('hud'); hud.style.color = col;
+  const hudBg = skyAt(Math.max(0, altAtY(90, c))), kC = 1 - smooth(0.66, 0.82, lum(hudBg));   // HUD는 일찍 밝아지게: 후지산 다가올 무렵(하늘 밝기 0.82→0.66) 크림색으로 다 바뀜
+  const col = rgb(mix(INK_A, CREAM_A, kC));
+  const hud = $('hud'); hud.style.color = col; hud.style.textShadow = kC > 0.02 ? `0 2px 0 rgba(59,42,30,${(0.45 * kC).toFixed(2)})` : 'none';
   $('alt').textContent = h >= 10000 ? (h / 1000).toFixed(1) + 'km' : (h < 10 ? h.toFixed(2) : fmt(h)) + 'm';
   $('sub').textContent = `쇼츠 ${fmt(Math.min(n, (data || EXAMPLE).shorts))}편 × ${(UNIT * 100).toFixed(1)}cm`;
 }
