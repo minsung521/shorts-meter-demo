@@ -33,10 +33,14 @@
   /* B안: 조금 투박하되 담백한 손그림 톤. 13 mini(375×812) 기준 */
   :root { --ink: #3B2A1E; --acc: #E8553D; --cream: #FFF8EA; --paper: #FBF5E8; --ok: #4F8A3C; }
   * { box-sizing: border-box; }
+  /* 문서 자체는 절대 스크롤되지 않음: 무대는 화면에 고정, 자세히 보기는 버튼을 눌렀을 때만 위에 덮이는 별도 화면.
+     (이전엔 결과가 나오면 자세히 보기가 무대 바로 아래에 붙어서, 위로 쓸거나 인앱 툴바가 접히면 아래로 비쳐 보였음) */
+  html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
   html, body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Gaegu", sans-serif; letter-spacing: -0.05em; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; -webkit-tap-highlight-color: transparent; }   /* Gaegu는 기본 자간이 넓어 보여서 좁힘 */
   .lede, .intro .lede, .finale .fs, .finale .fnote, .hud .sub, .soon, .pickScale, .range, .verdict, .foot { letter-spacing: -0.09em; word-spacing: 0.08em; }   /* Gaegu 본문: 글자 사이만 좁히고 단어 사이는 유지 */
   .btn, .q, h1, h2, h3, .pickQ, .pickV, .hud .alt, .finale .fn, .finale .pill, .ladder .n, .ladder .r { letter-spacing: -0.01em; }   /* Jua는 원래 자간 유지 */
-  .stage { position: relative; height: 100vh; height: var(--appH, 100dvh); min-height: 520px; overflow: hidden; -webkit-user-select: none; user-select: none; }   /* 홈 화면 앱 모드에선 JS가 화면 전체 높이로 맞춤 */
+  .stage { position: fixed; inset: 0; overflow: hidden; touch-action: none; -webkit-user-select: none; user-select: none; }   /* 보이는 화면을 정확히 채움 (vh·dvh 계산에 기대지 않음) */
+  .stage.sa { bottom: auto; height: var(--appH, 100%); }   /* 홈 화면 앱 모드: JS가 화면 전체 높이로 맞춤 */
   #cv { display: block; width: 100%; height: 100%; }
   .hud { position: absolute; left: 18px; top: calc(48px + env(safe-area-inset-top, 0px)); pointer-events: none; opacity: 0; transition: opacity .4s; }
   .hud.on { opacity: 1; }
@@ -112,8 +116,11 @@
   .arrive h2 b { color: var(--acc); font-weight: 400; }
   .arrive canvas { display: block; width: 100%; height: 170px; }
   .arrive .tiny { font-size: 13px; opacity: .65; margin-top: 2px; }
-  .res { box-sizing: border-box; min-height: var(--appH, 100dvh); display: flex; flex-direction: column; justify-content: center; padding: calc(18px + env(safe-area-inset-top, 0px)) 20px calc(16px + env(safe-area-inset-bottom, 0px)); max-width: 480px; margin: 0 auto; }   /* 한 화면(13 mini 812px) 안에 다 들어오게 */
+  .res { position: fixed; inset: 0; z-index: 30; background: var(--paper); overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; animation: resIn .28s cubic-bezier(.2,.8,.2,1); }
   .res[hidden] { display: none; }
+  @keyframes resIn { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .res { animation: none; } }
+  .resIn { box-sizing: border-box; min-height: 100%; display: flex; flex-direction: column; justify-content: center; padding: calc(18px + env(safe-area-inset-top, 0px)) 20px calc(16px + env(safe-area-inset-bottom, 0px)); max-width: 480px; margin: 0 auto; }
   .res h1 { font-size: 30px; line-height: 1.15; margin: 2px 0 4px; }
   .panel { background: var(--cream); border: 2px solid var(--ink); border-radius: 14px; box-shadow: 0 3px 0 var(--ink); padding: 10px 14px 12px; margin-top: 12px; }
   .panel h3 { font-family: "Jua", sans-serif; font-weight: 400; font-size: 18px; margin: 0 0 4px; }
@@ -154,14 +161,14 @@
   <div class="err" id="err"></div>
   <div class="bar" id="bar"></div>
 </div>
-<section class="res" id="res" hidden>
+<section class="res" id="res" hidden aria-label="결과 자세히"><div class="resIn">
   <div class="eyebrow">결과</div>
   <h1 id="resTitle"></h1>
   <div class="panel"><h3>판정</h3><p class="range" id="range"></p><p class="verdict" id="verdict"></p></div>
   <div class="panel"><h3>고도표</h3><ul class="ladder" id="ladder"></ul></div>
   <p class="foot" id="foot"></p>
-  <div class="bar2"><button class="btn main" type="button" data-act="again">다시 하기</button><button class="btn" type="button" data-act="replay">다시 올라가기</button></div>
-</section>
+  <div class="bar2"><button class="btn main" type="button" data-act="again">다시 하기</button><button class="btn" type="button" data-act="close">결과로 돌아가기</button></div>
+</div></section>
 <script>
 /* ===== 계산 가정 (값을 바꾸려면 여기만 고치면 됨) ===== */
 const SEC_PER_SHORT = 20;                                 // 쇼츠 1편 평균 시청 시간(초)
@@ -206,25 +213,32 @@ const OBJECTS = [
   { name: '롯데월드타워', short: '롯데타워', h: 555, kind: 'ground', shape: 'tower', aspect: 0.15 },
   { name: '부르즈 할리파', short: '부르즈', h: 828, kind: 'ground', shape: 'tower', aspect: 0.15, meme: true },   // 낙하산과 0.56초 간격이라 항상 표시로
   { name: '스카이다이빙 낙하산', h: 1500, kind: 'float', meme: true },   // 탠덤 낙하산 펴는 고도(보통 1,400~1,500m). 후지산 직전, 항상 표시
-  { name: '한라산', h: 1947, kind: 'ground', shape: 'mountain', aspect: 3.2 },
-  { name: '백두산', h: 2744, kind: 'ground', shape: 'mountain', aspect: 3.0 },
+  { name: '한라산', h: 1947, kind: 'ground', shape: 'mountain', aspect: 3.2, peak: 0.462 },   // peak: 실사 이미지에서 정상의 가로 위치(0~1)
+  { name: '백두산', h: 2744, kind: 'ground', shape: 'mountain', aspect: 3.0, peak: 0.395 },
   { name: '후지산', h: 3776, kind: 'ground', shape: 'mountain', aspect: 2.6 },
-  { name: '킬리만자로', h: 5895, kind: 'ground', shape: 'mountain', aspect: 2.6 },
-  { name: '에베레스트', h: 8849, kind: 'ground', shape: 'mountain', aspect: 2.0 },
-  { name: '여객기 순항고도', short: '여객기', h: 11000, kind: 'float' },
+  { name: '킬리만자로', h: 5895, kind: 'ground', shape: 'mountain', aspect: 2.6, peak: 0.698 },
+  { name: '에베레스트', h: 8849, kind: 'ground', shape: 'mountain', aspect: 2.0, peak: 0.441 },
+  { name: '여객기 순항고도', short: '여객기', h: 11000, kind: 'float', unit: '여객기 고도' },
   { name: '성층권', h: 12000, kind: 'line' },
   { name: '적란운', h: 13000, kind: 'float' },
+  { name: '콩코드 순항고도', short: '콩코드', h: 18300, kind: 'float', unit: '콩코드 고도' },
   { name: '오존층', h: 25000, kind: 'line' },
-  { name: '기상 관측 기구', h: 35000, kind: 'float' },
-  { name: '성층권 낙하 기록', h: 39000, kind: 'float' },
+  { name: '기상 관측 기구', h: 35000, kind: 'float', unit: '기상 관측 기구 고도', fh: 150 },   // fh: 그림 최대 높이(px). 풍선+줄이 세로로 길어서 크게
+  { name: '성층권 낙하 기록', h: 39000, kind: 'float', unit: '성층권 낙하 고도' },
   { name: '성층권 끝', h: 50000, kind: 'line' },          // 맨 위 마무리 (결과 최대 약 47.6km)
 ].sort((a, b) => a.h - b.h);
 const GROUND = OBJECTS.filter(o => o.kind === 'ground');
+// 비교 배지 단위: 땅 위 기준물 + 이름(unit)이 있는 공중 오브젝트. 경계선(성층권·오존층·성층권 끝)과 우주인(장식)은 제외
+const UNITS = OBJECTS.filter(o => o.kind === 'ground' || o.unit);
+const unitAt = dist => UNITS.filter(o => o.h <= dist).pop() || null;
+const ASTRO = { name: '우주인', kind: 'decor', from: 40000 };   // 40km 이상에서만 보이는 장식 (비교 단위 아님)
 // 에셋: assets/<파일>.png (투명 배경, 오브젝트 바닥이 이미지 아래 끝에 닿게 자른 것). 없으면 자리 도형으로 그림
 const ASSET_FILES = { '두쫀쿠': 'dujjonku', '우사기': 'usagi', '박수 치는 검은 고양이': 'black-cat', '더피': 'duffy', '석굴암 본존불': 'seokguram',
   '트로이 목마': 'trojan-horse', '누리호': 'nuri', '에펠탑': 'eiffel', '엠파이어 스테이트 빌딩': 'empire-state', '롯데월드타워': 'lotte-tower', '부르즈 할리파': 'burj-khalifa', '스카이다이빙 낙하산': 'parachute',
-  '후지산': 'fuji' };
-for (const o of OBJECTS) {
+  '후지산': 'fuji', '한라산': 'obj_hallasan', '백두산': 'obj_baekdusan', '킬리만자로': 'obj_kilimanjaro', '에베레스트': 'obj_everest',
+  '여객기 순항고도': 'obj_airliner', '콩코드 순항고도': 'obj_concorde', '기상 관측 기구': 'obj_balloon', '성층권 낙하 기록': 'obj_skydiver', '우주인': 'obj_astronaut' };
+// 실사 산 이미지는 맨 아래 = 지면, 맨 위 = 정상으로 잘라 둠 → 이미지 높이 전체가 산 높이. 로딩 전에는 직접 그린 산으로 대신 표시
+for (const o of [...OBJECTS, ASTRO]) {
   const f = ASSET_FILES[o.name]; if (!f) continue;
   const im = new Image();
   im.onload = () => { o.img = im; o.aspect = im.naturalWidth / im.naturalHeight; if (TL) frame(arrived ? TL.climbEnd + END_HOLD : 0); };
@@ -258,7 +272,7 @@ function skyAt(alt) {
 }
 const lum = c => (0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]) / 255;
 const inkOn = bg => mix(INK_A, CREAM_A, 1 - smooth(0.3, 0.62, lum(bg)));   // 배경 밝기에 따라 잉크↔크림 자연스럽게
-const hfmt = h => h < 1 ? Math.round(h * 100) + 'cm' : h >= 10000 ? fmt(h / 1000) + 'km' : (h < 10 ? (+h.toFixed(2)) + 'm' : fmt(h) + 'm');
+const hfmt = h => h < 1 ? Math.round(h * 100) + 'cm' : h >= 10000 ? (+(h / 1000).toFixed(1)) + 'km' : (h < 10 ? (+h.toFixed(2)) + 'm' : fmt(h) + 'm');   // 18,300 → 18.3km
 const lenFmt = d => d >= 1000 ? (d / 1000).toFixed(2) + 'km' : (d < 10 ? d.toFixed(2) : fmt(d)) + 'm';
 
 /* ===== 타임라인: 시간 t(ms) → 넘긴 길이 h(m) ===== */
@@ -270,8 +284,10 @@ function buildTL() {                                      // 넘김 구간 없�
   const DUR = dist > 0 ? Math.max(5000, Math.min(11000, 2100 * L)) * SPEED_K : 0;
   TL = { dist, H0, L, DUR, climbEnd: START_HOLD + DUR, shorts: d.shorts };
   TL.finB = fillFinale(d);   // 결과 숫자 묶음 아래 끝(px): 도착 화면에서 막대·라벨이 이 아래로만 오게
+  TL.unit = unitAt(dist);    // 비교 배지 단위 (도착 화면에 끝까지 남김)
   TL.shown = pickShown();
   TL.top = GROUND.filter(o => o.h <= dist).pop() || null;
+  TL.keepH = Math.max(TL.top ? TL.top.h : 0, TL.unit ? TL.unit.h : 0);
   TL.passT = new Map(GROUND.map(o => [o, passTime(o.h)]));
   TL.prevShown = new Map(); { let pv = null; for (const o of GROUND) if (TL.shown.has(o) && (!TL.top || o.h <= TL.top.h)) { if (pv) TL.prevShown.set(o, pv); pv = o; } }
   TL.enterT = enterTimes();
@@ -295,7 +311,7 @@ function enterTimes() {   // 오브젝트가 오른쪽에서 튀어나오는 시
 }
 const FADE_MS = 90;
 function leaveTimes() {
-  const chain = OBJECTS.filter(o => (o.kind === 'ground' || o.kind === 'float') && TL.shown.has(o) && (!TL.top || o.h <= TL.top.h)).sort((a, b) => a.h - b.h);
+  const chain = OBJECTS.filter(o => (o.kind === 'ground' || o.kind === 'float') && TL.shown.has(o) && o.h <= TL.keepH).sort((a, b) => a.h - b.h);
   const enter = o => {
     if (o.kind === 'ground') return TL.enterT.get(o);
     for (let t = 0; t <= TL.climbEnd + 20; t += 8) { const c = cam(hAt(t)), y = yOf(o.h, c); if (y >= TOP_PAD - 50 && y <= Math.min(yOf(0, c), H) - 30) return t; }   // 떠 있는 것은 화면에 들어오는 시각
@@ -319,7 +335,7 @@ function passTime(hh) {                                    // 막대가 hh 높�
 }
 function pickShown() {
   const cands = OBJECTS.filter(o => o.kind !== 'line').sort((a, b) => a.h - b.h);
-  const passed = GROUND.filter(o => o.h <= TL.dist), must = new Set([passed[passed.length - 1], GROUND.find(o => o.h > TL.dist), ...OBJECTS.filter(o => o.meme && o.h <= TL.dist)]);
+  const passed = GROUND.filter(o => o.h <= TL.dist), must = new Set([passed[passed.length - 1], GROUND.find(o => o.h > TL.dist), ...OBJECTS.filter(o => o.meme && o.h <= TL.dist), TL.unit].filter(Boolean));
   const sel = []; let lastT = -Infinity, lastMust = false;
   for (const o of cands) {
     const t = passTime(o.h);
@@ -419,10 +435,28 @@ function drawPin(cx, bottomY, alpha) {                 // 폰이 작아지면 '�
   ctx.save(); rr(px + 2.5, py + 2.5, pw - 5, ph - 5, 5); ctx.clip(); drawShort(px + 2.5, py + 2.5, pw - 5, ph - 5, 0); ctx.restore();
   ctx.restore();
 }
-function sticker(name, sub, cx, bottomY, alpha = 1, rot = -0.05, minL = 0) {   // minL: 라벨 왼쪽 끝이 이보다 왼쪽으로 못 오게 (핀과 겹침 방지)   // 손으로 붙인 라벨 (이름 19px, 높이 15px)
-  if (alpha < 0.03) return;
-  ctx.save(); ctx.globalAlpha = alpha; ctx.font = '19px Jua'; const w1 = ctx.measureText(name).width; ctx.font = '700 15px Gaegu'; const w2 = ctx.measureText(sub).width;
+// 한 프레임 안에서 라벨·그림이 차지한 자리. 경계선 라벨은 여기와 겹치지 않는 곳을 골라 붙임
+let OCC = [], CUT = 0;   // CUT: 이 y보다 위는 결과 숫자 묶음 자리 (라벨 금지)
+const hits = b => b.y0 < CUT || OCC.some(r => !(b.x1 + 4 < r.x0 || b.x0 - 4 > r.x1 || b.y1 + 2 < r.y0 || b.y0 - 2 > r.y1));
+function stickerBox(name, sub, cx, bottomY, minL = 0) {   // 라벨이 놓일 자리 (그리지 않고 계산만)
+  ctx.save(); ctx.font = '19px Jua'; const w1 = ctx.measureText(name).width; ctx.font = '700 15px Gaegu'; const w2 = ctx.measureText(sub).width; ctx.restore();
   const w = Math.max(w1, w2) + 22, h = 48; cx = Math.max(w / 2 + 6, minL + w / 2, Math.min(W - w / 2 - 6, cx));   // 화면 밖으로 안 나가게
+  return { cx, w, h, x0: cx - w / 2, x1: cx + w / 2, y0: bottomY - h, y1: bottomY };
+}
+function miniTag(name, sub, y) {   // 막대 왼쪽(화면 왼쪽 끝 ~ 막대) 좁은 띠에 붙는 작은 라벨
+  ctx.save(); ctx.font = '12px Jua'; const w1 = ctx.measureText(name).width; ctx.font = '700 11px Gaegu'; const w2 = ctx.measureText(sub).width;
+  const w = Math.max(w1, w2) + 10, h = 30, x0 = 6, bx = { x0, x1: x0 + w, y0: y - h - 3, y1: y - 3 };
+  if (bx.x1 > BARX() - 6 || hits(bx)) { ctx.restore(); return false; }
+  ctx.fillStyle = 'rgba(255,248,234,.94)'; rr(x0, bx.y0, w, h, 7); ctx.fill(); ctx.strokeStyle = INK; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.textAlign = 'center'; ctx.fillStyle = INK; ctx.font = '12px Jua'; ctx.fillText(name, x0 + w / 2, bx.y0 + 13);
+  ctx.fillStyle = ACC; ctx.font = '700 11px Gaegu'; ctx.fillText(sub, x0 + w / 2, bx.y0 + 25);
+  ctx.restore(); OCC.push(bx); return true;
+}
+function sticker(name, sub, cx, bottomY, alpha = 1, rot = -0.05, minL = 0) {   // 손으로 붙인 라벨 (이름 19px, 높이 15px). minL: 라벨 왼쪽 끝이 이보다 왼쪽으로 못 오게 (핀과 겹침 방지)
+  if (alpha < 0.03) return;
+  const bx = stickerBox(name, sub, cx, bottomY, minL), w = bx.w, h = bx.h; cx = bx.cx;
+  if (alpha > 0.3) OCC.push(bx);
+  ctx.save(); ctx.globalAlpha = alpha;
   ctx.translate(cx, bottomY - h / 2); ctx.rotate(rot);
   ctx.fillStyle = '#fff'; rr(-w / 2, -h / 2, w, h, 10); ctx.fill(); ctx.strokeStyle = INK; ctx.lineWidth = 2; ctx.stroke();
   ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
@@ -481,12 +515,47 @@ function frame(t) {
   drawSky(c);
   if (DROP > 0.5) ctx.translate(0, DROP);
   // 경계선
-  let li = 0, lastLY = Infinity;
+  OCC = []; CUT = topCut(c, h) + 2; const lineLabels = [];
   for (const o of OBJECTS) if (o.kind === 'line') {
     const y = yOf(o.h, c); if (y < topCut(c, h) + 20 || y > Math.min(gy, H) - 12) continue;   // 라벨(48px)이 결과 숫자를 가리지 않게
     ctx.save(); ctx.setLineDash([7, 6]); ctx.strokeStyle = rgb(inkOn(skyAt(o.h)), 0.6); ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); ctx.restore();
-    li = lastLY - y < 58 ? li + 1 : 0; lastLY = y;   // 줌아웃해서 선끼리 가까우면 라벨을 좌우로 엇갈려 겹치지 않게
-    sticker(o.name, hfmt(o.h), li % 2 ? W * 0.56 : W - 70, y - 6, 1, li % 2 ? 0.03 : -0.03);
+    lineLabels.push([o, y]);   // 라벨은 오브젝트를 다 그린 뒤 빈 자리에 붙임
+  }
+  // 핀 자리도 비워 둠 (경계선 라벨이 핀을 가리지 않게)
+  { const py = yOf(h, c); OCC.push({ x0: BARX() - 30, x1: BARX() + 30, y0: py - 100, y1: py }); }
+  // 떠 있는 오브젝트 (실사 이미지, 보기 좋은 고정 크기)
+  for (const o of OBJECTS) if (o.kind === 'float' && TL.shown.has(o)) {
+    const y = yOf(o.h, c); if (y < topCut(c, h) + 20 || y > Math.min(gy, H) - 30) continue;
+    const lv = TL.leaveT.get(o) ?? passTime(o.h) + 60, tE = TL.enterT.get(o) ?? 0, fa = smooth(tE, tE + 50, t) * (isFinite(lv) ? 1 - smooth(lv, lv + FADE_MS, t) : 1);   // 다음 오브젝트가 들어오면 흐려짐 (끝까지 남는 것은 lv = ∞)
+    if (fa < 0.02) continue;
+    if (o.img && o.img.complete && o.img.naturalWidth) {   // 실사 이미지: 가로 W×0.56, 세로 fh(기본 110px) 상자 안에 맞춤. 고도 = 그림 가운데
+      const k = Math.min((o.fh || 110) / o.img.naturalHeight, W * 0.56 / o.img.naturalWidth), fw = o.img.naturalWidth * k, fh = o.img.naturalHeight * k;
+      const x = Math.min(W - fw / 2 - 8, Math.max(W * 0.6, BARX() + 44 + fw / 2));
+      ctx.save(); ctx.globalAlpha = fa; ctx.drawImage(o.img, x - fw / 2, y - fh / 2, fw, fh); ctx.restore();
+      // 라벨 자리: 그림 위 → 그림 오른쪽 → 그림 왼쪽 → 그림 아래 (결과 숫자·다른 라벨과 안 겹치는 첫 자리)
+      const nm = o.name, sub = hfmt(o.h), sw = stickerBox(nm, sub, x, 0).w, top = y - fh / 2;
+      const side = Math.max(top + 50, CUT + 52);   // 옆에 붙일 때 라벨 아래 끝 (결과 숫자 영역 아래)
+      const cands = [[x, top - 6], [x + fw / 2 + sw / 2 + 4, side], [x - fw / 2 - sw / 2 - 4, side], [x, y + fh / 2 + 52]];
+      const pick = cands.find(([cx, by]) => { const bx = stickerBox(nm, sub, cx, by, BARX() + 36); return Math.abs(bx.cx - cx) < 8 && !hits(bx); }) || cands[0];
+      sticker(nm, sub, pick[0], pick[1], fa, 0.04, BARX() + 36);
+      if (fa > 0.3) OCC.push({ x0: x - fw / 2, x1: x + fw / 2, y0: y - fh / 2, y1: y + fh / 2 });   // 자기 라벨은 그림에 살짝 닿아도 되게, 라벨을 정한 뒤에 그림 자리 기록
+      continue;
+    }
+    sticker(o.name, hfmt(o.h), Math.max(W * 0.6, BARX() + 100), y, fa, 0.04, BARX() + 36);   // 그림 없는 것(적란운)은 라벨만
+  }
+  // 우주인: 결과가 40km 이상일 때만, 결과 숫자 묶음 바로 아래 빈 자리에 둥실 (장식)
+  if (ASTRO.img && TL.dist >= ASTRO.from) {
+    const a = smooth(ASTRO.from, ASTRO.from + 2500, h);
+    if (a > 0.02) {
+      const ah = 54, aw = ah * ASTRO.img.naturalWidth / ASTRO.img.naturalHeight, cut = topCut(c, h);
+      const spots = [[W - aw / 2 - 6, cut + 8], [W - aw / 2 - 6, cut + 60], [W * 0.5, cut + 8], [BARX() + 40 + aw / 2, cut + 8]];   // 오른쪽 위 → 조금 아래 → 가운데 → 핀 옆
+      for (const [ax, top] of spots) {
+        const ay = top + ah / 2, bx = { x0: ax - aw / 2, x1: ax + aw / 2, y0: ay - ah / 2, y1: ay + ah / 2 };
+        if (hits(bx)) continue;
+        ctx.save(); ctx.globalAlpha = a; ctx.translate(ax, ay + Math.sin(t / 700) * 3); ctx.rotate(-0.18); ctx.drawImage(ASTRO.img, -aw / 2, -ah / 2, aw, ah); ctx.restore();
+        OCC.push(bx); break;
+      }
+    }
   }
   // 실제 비율 오브젝트: 다음 상대는 오른쪽에서 들어오고, 넘은 것은 작아지며 뒤로 빠짐
   const slot = W * 0.72, next = GROUND.find(o => o.h > h && TL.shown.has(o)), devH = DEV_H_M * c.ppm;
@@ -499,29 +568,36 @@ function frame(t) {
     // 오른쪽 화면 밖에서 튀어나와(살짝 지나쳤다 제자리) 멈춤. 이후 위치 고정
     const ent = Math.min(1, (t - tA) / ENTER_MS), x0 = isTop ? BARX() + 14 + Math.min(w, W * 0.7) / 2 : slot;
     const x = x0 + (1 - easeOutBack(ent)) * (W + Math.min(w, W) * 0.3 - x0);   // 첫 프레임부터 오른쪽 끝에 살짝 보이게 (빈 화면 방지)
-    const up = easeOut(ent);
+    const up = easeOut(ent), xImg = o.img && o.peak ? x + (0.5 - o.peak) * w : x;   // 넓은 산 사진: 정상이 x 위치에 오게
     let alpha = smooth(1.2, 8, hPx);
     if (MOTION === 'fold') {                            // 시안 테스트용(#fold): 일어서고 뒤로 넘어가는 종이판
       const tp = TL.passT.get(o), down = isTop || p < 1 ? 0 : easeIn(smooth(tp, tp + FALL_MS, t)), fold = up * (1 - down);
       if (fold < 0.02) continue;
-      drawFold(isTop ? { ...o, aspect: asp } : o, x, gy, hPx, alpha, fold, down);
+      drawFold(isTop ? { ...o, aspect: asp } : o, xImg, gy, hPx, alpha, fold, down);
     } else {                                            // 기본: 오른쪽에서 튀어나오고, 넘으면 바로 흐려짐
       if (p > 1 && !isTop) { const lv = TL.leaveT.get(o) ?? TL.passT.get(o) + 60; alpha *= 1 - smooth(lv, lv + FADE_MS, t); }   // 넘은 뒤 다음 오브젝트가 들어오면 흐려져 사라짐
-      drawObj(isTop ? { ...o, aspect: asp } : o, x, gy, hPx, alpha);
+      drawObj(isTop ? { ...o, aspect: asp } : o, xImg, gy, hPx, alpha);
     }
     const rival = o === next && (p > 0.35 || o.h <= 0.1);
     const justPassed = MOTION !== 'fold' && p >= 1 && p < 2.2;
-    if (rival || justPassed || (isTop && p >= 1)) sticker(o.name, hfmt(o.h), x, Math.max(TOP_PAD - 10, gy - hPx - 8), (rival ? up : isTop ? 1 : 1 - smooth(1.5, 2.2, p)) * alpha, -0.05, isTop ? BARX() + 36 : 0);
+    if (rival || justPassed || (isTop && p >= 1)) {
+      let sy = Math.max(TOP_PAD - 10, gy - hPx - 8);
+      if (isTop) {   // 정상 라벨이 비행기·결과 숫자 등에 가리면 산 위로 조금씩 내려 붙임
+        const cand = [sy, sy + 52, gy - hPx * 0.45, gy - hPx * 0.2, gy - 6].map(v => Math.min(gy - 6, Math.max(sy, v)));
+        sy = cand.find(v => !hits(stickerBox(o.name, hfmt(o.h), x, v, BARX() + 36))) ?? cand[cand.length - 1];
+      }
+      sticker(o.name, hfmt(o.h), x, sy, (rival ? up : isTop ? 1 : 1 - smooth(1.5, 2.2, p)) * alpha, -0.05, isTop ? BARX() + 36 : 0);
+    }
   }
-  // 떠 있는 오브젝트 (보기 좋은 고정 크기, 지금은 자리 표시)
-  for (const o of OBJECTS) if (o.kind === 'float' && TL.shown.has(o)) {
-    const y = yOf(o.h, c); if (y < topCut(c, h) + 20 || y > Math.min(gy, H) - 30) continue;
-    const lv = TL.leaveT.get(o) ?? passTime(o.h) + 60, tE = TL.enterT.get(o) ?? 0, x = W * 0.56, fa = smooth(tE, tE + 50, t) * (1 - smooth(lv, lv + FADE_MS, t));   // 다음 오브젝트가 들어오면 흐려짐
-    if (fa < 0.02) continue;
-    ctx.save(); ctx.globalAlpha = fa;
-    if (o.img && o.img.complete && o.img.naturalWidth) { const fh = 120, fw = fh * o.aspect; ctx.drawImage(o.img, x - fw / 2, y - fh / 2, fw, fh); ctx.restore(); sticker(o.name, hfmt(o.h), x, y - fh / 2 - 6, fa, 0.04); continue; }   // 떠 있는 것은 보기 좋은 고정 크기
-    ctx.save(); ctx.fillStyle = 'rgba(242,227,198,.92)'; ctx.strokeStyle = INK; ctx.lineWidth = 1.5; ctx.setLineDash([5, 4]); ctx.beginPath(); ctx.ellipse(x, y, 26, 16, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); ctx.restore(); ctx.restore();
-    sticker(o.name, hfmt(o.h), x, y - 20, fa, 0.04);
+  // 경계선 라벨: 오른쪽 → 가운데 → (그래도 막히면) 막대 왼쪽 빈 띠에 작은 두 줄 라벨. 그마저 막히면 라벨만 생략(점선은 남음)
+  for (const [o, y] of lineLabels) {
+    const nm = o.name, sub = hfmt(o.h); let done = false;
+    for (const [cx, rot] of [[W - 70, -0.03], [W * 0.56, 0.03]]) {
+      const bx = stickerBox(nm, sub, cx, y - 6, 0);
+      if (hits(bx)) continue;
+      sticker(nm, sub, bx.cx, y - 6, 1, rot); done = true; break;
+    }
+    if (!done) miniTag(nm, sub, y);
   }
   // 땅
   if (gy < H) { ctx.fillStyle = '#A3B86C'; ctx.fillRect(0, gy, W, H - gy); ctx.fillStyle = INK; ctx.fillRect(0, gy - 1.5, W, 3); }
@@ -544,10 +620,10 @@ function topPassed() { const d = TL.dist, p = GROUND.filter(o => o.h <= d); retu
 const perDay = m => m >= MAX_MIN ? minLabel(m).replace('+', ' 이상') : minLabel(m);
 const bigFmt = d => d >= 10000 ? (d / 1000).toFixed(1) + 'km' : fmt(d) + 'm';
 // 비교 배지: 결과보다 낮은 기준물 중 가장 높은 것을 단위로 (땅에 서 있는 것만 — 여객기·오존층 같은 '고도'는 개수로 셀 수 없어서 제외)
+const unitMult = (dist, u) => { const mult = dist / u.h; return mult >= 10 ? Math.round(mult) : Math.max(1, Math.round(mult * 10) / 10); };   // 1보다 작은 배수는 나오지 않음
 function compareBadge(dist) {
-  const top = GROUND.filter(o => o.h <= dist).pop(); if (!top) return '';
-  const mult = dist / top.h, m = mult >= 10 ? Math.round(mult) : Math.max(1, Math.round(mult * 10) / 10);   // 1보다 작은 배수는 나오지 않음
-  return `${top.name} ${m}개 높이`;
+  const u = unitAt(dist); if (!u) return '';
+  return `${u.unit || u.name} ${unitMult(dist, u)}개 높이`;
 }
 function fillFinale(d) {   // 결과 숫자 묶음 글자를 채우고, 그 아래 끝 위치(px)를 돌려줌
   const dist = d.dist;
@@ -563,7 +639,7 @@ function showArrive(on) {   // A안: 카드 대신 화면 위쪽에 큰 숫자 +
   const dist = TL.dist;
   // 높이 올라갈수록 하늘이 남색·검정이 되니, 숫자 뒤 하늘 밝기에 맞춰 잉크색 ↔ 크림색
   const c = cam(dist), r = $('finN').getBoundingClientRect(), bg = skyAt(Math.max(0, altAtY(r.top + r.height / 2 - $('stage').getBoundingClientRect().top, c)));
-  const kC = 1 - smooth(0.3, 0.55, lum(bg));
+  const kC = lum(bg) < 0.6 ? 1 : 0;   // 하늘이 밝으면 잉크, 어두우면 크림 (중간색으로 섞으면 회색이 돼 안 읽힘)
   fin.style.color = rgb(mix(INK_A, CREAM_A, kC));
   fin.style.textShadow = kC > 0.5 ? '0 3px 0 rgba(59,42,30,.55)' : 'none';
   $('hud').classList.remove('on'); fin.classList.add('on');
@@ -609,7 +685,7 @@ function showLineupCard() {   // (이전 도착 카드: 지금은 안 씀)
   
 }
 function buildResult() {
-  const d = data, dist = TL.dist, top = GROUND.filter(o => o.h <= dist).pop(), next = OBJECTS.find(o => o.kind !== 'line' && o.h > dist), space = 100000;
+  const d = data, dist = TL.dist, top = unitAt(dist), next = OBJECTS.find(o => o.kind !== 'line' && o.h > dist), space = 100000;
   $('resTitle').innerHTML = `1년 동안 본 쇼츠 길이<br><b>${lenFmt(dist)}</b>`;
   $('range').textContent = `하루 ${perDay(d.minutes)} × ${DAYS}일 · 쇼츠 ${fmt(d.shorts)}편 (추정치)`;
   const lines = [];
@@ -622,7 +698,6 @@ function buildResult() {
   $('ladder').innerHTML = rows.map(o => { const ok = o.h <= dist, nx = o === list[ni];
     return `<li class="${ok ? 'ok' : ''}${nx ? ' next' : ''}"><span class="i">${ok ? '✓' : nx ? '▲' : '·'}</span><span class="n">${o.name}</span><span class="h">${hfmt(o.h)}</span><span class="r">${ok ? '통과' : '+' + fmt(Math.ceil((o.h - dist) / UNIT)) + '편'}</span></li>`; }).join('');
   $('foot').textContent = `추정치예요. 편수 = 하루 시청 시간 ÷ 쇼츠 1편 평균 ${SEC_PER_SHORT}초 × ${DAYS}일, 길이 = 편수 × 화면 세로 ${SCREEN_CM}cm(6.3인치 폰 기준). 유튜브 시청 기록 기반 정밀 측정은 준비 중이에요.`;
-  $('res').hidden = false;
 }
 
 /* ===== 이벤트 집계 (PostHog, 스크립트 없이 요청 한 번) ===== */
@@ -691,6 +766,7 @@ function play() {
 }
 function showStart() { cancelAnimationFrame(raf); raf = 0; playing = false; arrived = false; data = estimate(+sl.value); buildTL(); DROP = H + 40; frame(0); $('intro').classList.remove('off'); $('hud').classList.remove('on'); showArrive(false); setBar('start'); }
 function toTop(after) { $('res').hidden = true; window.scrollTo(0, 0); after(); }
+function openDetail() { const r = $('res'); r.hidden = false; r.scrollTop = 0; }
 document.addEventListener('click', e => {
   const a = e.target.closest('[data-act]');
   if (!a) { if (playing && !arrived && e.target.closest('#stage')) skip = true; return; }
@@ -698,10 +774,24 @@ document.addEventListener('click', e => {
   if (act === 'go') { data = estimate(+sl.value); toTop(play); }
   if (act === 'again') toTop(showStart);                     // 입력 화면으로 (고른 값은 그대로)
   if (act === 'replay') toTop(play);
-  if (act === 'result') $('res').scrollIntoView({ behavior: 'smooth' });
+  if (act === 'result') openDetail();
+  if (act === 'close') $('res').hidden = true;
 });
 const redraw = () => { if (TL && (!raf || arrived)) frame(arrived ? TL.climbEnd + END_HOLD : 0); };
-addEventListener('resize', () => { layout(); fitStandalone(); if (!TL) return; if (!arrived && !raf) DROP = H + 40; redraw(); });
+let fitRaf = 0;
+function refit() {
+  cancelAnimationFrame(fitRaf);
+  fitRaf = requestAnimationFrame(() => {
+    fitStandalone(); const pw = W, ph = H; layout(); if (window.scrollY) window.scrollTo(0, 0);
+    if (!TL) return;
+    if (pw === W && ph === H) { redraw(); return; }
+    if (!arrived && !raf) DROP = H + 40;
+    if (arrived) TL.finB = fillFinale(data);   // 높이가 바뀌면 결과 숫자 아래 여백도 다시 계산
+    redraw();
+  });
+}
+addEventListener('resize', refit);
+if (window.visualViewport) visualViewport.addEventListener('resize', refit);
 // 테스트용: 특정 시점 화면 고정 (__seek(t, 분))
 window.__seek = (t, m) => { cancelAnimationFrame(raf); if (m) data = estimate(m); else if (!data) data = estimate(DEFAULT_MIN); buildTL(); DROP = 0; $('intro').classList.add('off'); $('hud').classList.add('on'); frame(t);
   const done = t > TL.climbEnd + END_HOLD; arrived = done; showArrive(done); if (done) { buildResult(); setBar('arrived'); } else setBar('climb'); return { h: hAt(t), climbEnd: TL.climbEnd }; };
@@ -709,13 +799,12 @@ window.__start = showStart;
 window.__estimate = estimate;
 window.__thin = () => { const all = OBJECTS.filter(o => o.kind !== 'line' && o.h <= TL.dist); const sh = all.filter(o => TL.shown.has(o)); const ts = sh.map(o => passTime(o.h)); const gaps = ts.slice(1).map((t, i) => t - ts[i]); return { km: +(TL.dist / 1000).toFixed(2), sec: +(TL.climbEnd / 1000).toFixed(1), passed: all.length, shown: sh.length, minGap: Math.round(Math.min(...gaps)), names: sh.map(o => o.name).join(',') }; };
 // 아이폰 홈 화면 앱(standalone) + 반투명 상태바에선 100dvh가 상태바 높이만큼 짧게 잡혀 아래에 빈 띠가 남음 → 실제 화면 높이로 고정
-// 100dvh를 모르는 옛 iOS(15.3 이하) 인앱 브라우저는 실제 보이는 높이로 고정
 function fitStandalone() {
   const sa = navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
+  $('stage').classList.toggle('sa', sa);
   if (sa) document.documentElement.style.setProperty('--appH', Math.max(innerHeight, screen.height) + 'px');
-  else if (!(window.CSS && CSS.supports && CSS.supports('height', '100dvh'))) document.documentElement.style.setProperty('--appH', innerHeight + 'px');
 }
-fitStandalone(); addEventListener('orientationchange', () => setTimeout(() => { fitStandalone(); layout(); redraw(); }, 300));
+fitStandalone(); addEventListener('orientationchange', () => setTimeout(refit, 300));
 layout();
 // 캔버스 글씨(Jua·Gaegu)는 한글 조각 파일을 미리 받아 둠. 늦게 받아져도 다시 그림. 글꼴이 안 와도 1.5초 뒤엔 그냥 진행
 const FONT_TXT = '쇼츠길이측정기0123456789,.mk에베레스트후지산한라산백두산킬리만자로부르즈할리파성층권끝오존층여객기순항고도낙하기록';
