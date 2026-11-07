@@ -102,8 +102,7 @@
     .finale .fk { font-size: 23px; } .finale .fn { font-size: 76px; } .finale .fs b { font-size: 17px; } .finale .fs span { font-size: 14px; }
     .finale .pill { font-size: 19px; margin-top: 8px; padding: 7px 15px 9px; } .finale .fnote { margin-top: 8px !important; font-size: 12px !important; }
   }
-  .finale .fnote { display: block; margin: 12px auto 0; font-weight: 700; font-size: 13px; line-height: 1.3; opacity: .8; }   /* 추정치 · 계산 가정 한 줄 */
-  .finale .fnote em { font-style: normal; font-family: "Jua", sans-serif; font-size: 12px; letter-spacing: 0; border: 1.5px solid currentColor; border-radius: 6px; padding: 0 4px 1px; margin-right: 4px; }
+  .finale .fnote { display: block; margin: 12px auto 0; font-weight: 700; font-size: 13px; line-height: 1.3; opacity: .8; }   /* 계산 가정 한 줄 */
   .arrive[hidden] { display: none; }
   .arrive { position: absolute; left: 12px; right: 12px; bottom: calc(78px + env(safe-area-inset-bottom, 0px)); background: var(--cream);
     border: 2.5px solid var(--ink); border-radius: 18px; box-shadow: 0 4px 0 var(--ink); padding: 14px 16px 12px;
@@ -555,7 +554,7 @@ function fillFinale(d) {   // 결과 숫자 묶음 글자를 채우고, 그 아�
   $('finN').textContent = bigFmt(dist);
   $('finS').innerHTML = `<b>쇼츠 ${fmt(d.shorts)}편 × ${SCREEN_CM}cm</b><span>하루 ${perDay(d.minutes)}씩 1년${dist >= 10000 ? ' · ' + fmt(dist) + 'm' : ''}</span>`;
   $('finP').textContent = compareBadge(dist);
-  $('finNote').innerHTML = `<em>추정치</em>쇼츠 1편 평균 ${SEC_PER_SHORT}초 · 화면 높이 ${SCREEN_CM}cm로 계산`;
+  $('finNote').textContent = `쇼츠 1편 평균 ${SEC_PER_SHORT}초 · 화면 높이 ${SCREEN_CM}cm로 계산`;
   return $('finNote').getBoundingClientRect().bottom - $('stage').getBoundingClientRect().top;
 }
 function showArrive(on) {   // A안: 카드 대신 화면 위쪽에 큰 숫자 + 배수 태그
