@@ -87,7 +87,7 @@
   .btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--ink); }
   .err { position: absolute; left: 16px; right: 16px; bottom: calc(76px + env(safe-area-inset-bottom, 0px)); text-align: center; font-weight: 700; color: var(--acc); }
   /* 도착 화면 A안: 숫자 포스터 */
-  .finale { position: absolute; left: 0; right: 0; top: calc(86px + env(safe-area-inset-top, 0px)); text-align: center; pointer-events: none; opacity: 0; transform: translateY(12px); transition: opacity .3s, transform .35s cubic-bezier(.2,.8,.2,1); }
+  .finale { position: absolute; left: 0; right: 0; top: calc(86px + env(safe-area-inset-top, 0px)); text-align: center; pointer-events: none; opacity: 0; transform: translateY(12px); transition: opacity .5s, transform .6s cubic-bezier(.2,.8,.2,1); }
   .finale.on { opacity: 1; transform: none; }
   .finale .fk { font-family: "Jua", sans-serif; font-size: 27px; letter-spacing: -0.01em; color: var(--cream);   /* 하늘 위에서도 잘 읽히게: 밝은 크림색 + 잉크 외곽선 */
     text-shadow: -2px 0 0 var(--ink), 2px 0 0 var(--ink), 0 -2px 0 var(--ink), 0 2px 0 var(--ink), -1.5px -1.5px 0 var(--ink), 1.5px -1.5px 0 var(--ink), -1.5px 1.5px 0 var(--ink), 1.5px 1.5px 0 var(--ink), 0 4px 0 var(--ink); }
@@ -95,7 +95,7 @@
   .finale .fs { display: flex; flex-direction: column; align-items: center; gap: 0; margin-top: 0; white-space: nowrap; }   /* 원래처럼 글자만, 두 줄로 나눠 크기만 키움 */
   .finale .fs b { font-weight: 700; font-size: 19px; }
   .finale .fs span { font-weight: 700; font-size: 15px; opacity: .72; }
-  .finale .pill { display: inline-block; margin-top: 12px; background: var(--acc); color: #fff; font-family: "Jua", sans-serif; font-size: 22px; padding: 9px 18px 11px; border: 2.5px solid var(--ink); border-radius: 999px; box-shadow: 0 3px 0 var(--ink); transform: rotate(-2deg) scale(.6); opacity: 0; transition: transform .35s cubic-bezier(.3,1.6,.5,1) .15s, opacity .15s .15s; }
+  .finale .pill { display: inline-block; margin-top: 12px; background: var(--acc); color: #fff; font-family: "Jua", sans-serif; font-size: 22px; padding: 9px 18px 11px; border: 2.5px solid var(--ink); border-radius: 999px; box-shadow: 0 3px 0 var(--ink); transform: rotate(-2deg) scale(.6); opacity: 0; transition: transform .45s cubic-bezier(.3,1.6,.5,1) .35s, opacity .2s .35s; }
   .finale.on .pill { transform: rotate(-2deg) scale(1); opacity: 1; }
   @media (max-height: 720px) {   /* 인스타 인앱 등 세로가 짧은 화면: 결과 묶음을 줄여 아래 그림 자리 확보 */
     .finale { top: calc(58px + env(safe-area-inset-top, 0px)); }
@@ -263,12 +263,12 @@ const hfmt = h => h < 1 ? Math.round(h * 100) + 'cm' : h >= 10000 ? fmt(h / 1000
 const lenFmt = d => d >= 1000 ? (d / 1000).toFixed(2) + 'km' : (d < 10 ? d.toFixed(2) : fmt(d)) + 'm';
 
 /* ===== 타임라인: 시간 t(ms) → 넘긴 길이 h(m) ===== */
-// 즉시 추정 모드: 버튼 → 결과(배지 등장까지) 3초 안에 끝나도록 짧게 (내려오기 0.25초 + 상승 1.4~1.7초 + 멈춤 0.25초 + 배지 0.5초)
-const START_HOLD = 120, END_HOLD = 250, N_SLOW = 5, CLIMB_MIN = 1400, CLIMB_MAX = 1700;
+// v2 원래 속도: 내려오기 1.1초 + 상승 5~11초(×SPEED_K) + 멈춤 0.65초. 상승 중 화면을 탭하면 바로 결과로
+const START_HOLD = 450, END_HOLD = 650, N_SLOW = 5, SPEED_K = 1.12;   // SPEED_K: 상승 전체 길이 배율 (1.12 = 12% 느리게)
 let TL = null;
 function buildTL() {                                      // 넘김 구간 없이 처음부터 한 번에 쭉 이어지는 상승
   const d = data || estimate(DEFAULT_MIN), dist = d.dist, H0 = UNIT * 2, L = Math.log10(1 + dist / H0);
-  const DUR = dist > 0 ? Math.max(CLIMB_MIN, Math.min(CLIMB_MAX, 360 * L)) : 0;
+  const DUR = dist > 0 ? Math.max(5000, Math.min(11000, 2100 * L)) * SPEED_K : 0;
   TL = { dist, H0, L, DUR, climbEnd: START_HOLD + DUR, shorts: d.shorts };
   TL.finB = fillFinale(d);   // 결과 숫자 묶음 아래 끝(px): 도착 화면에서 막대·라벨이 이 아래로만 오게
   TL.shown = pickShown();
@@ -279,8 +279,8 @@ function buildTL() {                                      // 넘김 구간 없�
   TL.leaveT = leaveTimes();   // 지나간 오브젝트는 다음 오브젝트가 들어올 때까지 남겨서 빈 화면이 없게   // 같은 자리에 겹치지 않게: 앞 오브젝트가 빠진 뒤 등장   // 도착 시 막대 바로 옆에 세워 둘 오브젝트
 }
 // 빨리 지나가는 구간은 오브젝트를 띄엄띄엄(1개 건너, 2개 건너…) 보여줘서 하나하나 알아볼 시간을 확보
-const MIN_GAP = 260;                                       // 보여주는 오브젝트끼리 최소 이 간격(ms)을 둠 (빠른 상승에 맞춤)
-const ENTER_MS = 200;
+const MIN_GAP = 700;                                       // 보여주는 오브젝트끼리 최소 이 간격(ms)을 둠
+const ENTER_MS = 340;
 function enterTimes() {   // 오브젝트가 오른쪽에서 튀어나오는 시각: 높이 절반 이상 + 화면에 들어오는 크기 + 앞 오브젝트가 빠진 뒤
   const m = new Map(), list = GROUND.filter(o => TL.shown.has(o) && (!TL.top || o.h <= TL.top.h));
   for (const o of list) {
@@ -294,7 +294,7 @@ function enterTimes() {   // 오브젝트가 오른쪽에서 튀어나오는 시
   }
   return m;
 }
-const FADE_MS = 70;
+const FADE_MS = 90;
 function leaveTimes() {
   const chain = OBJECTS.filter(o => (o.kind === 'ground' || o.kind === 'float') && TL.shown.has(o) && (!TL.top || o.h <= TL.top.h)).sort((a, b) => a.h - b.h);
   const enter = o => {
@@ -475,7 +475,7 @@ function drawBar(h, c) {
   ctx.globalAlpha = 1;
 }
 let lastIdxT = 0, DROP = 0;   // 시작 연출: 장면을 DROP(px)만큼 아래로 밀어 둠 (빈 노란 하늘)
-const DROP_MS = 250;
+const DROP_MS = 1100;
 function frame(t) {
   const h = hAt(t), c = cam(h), gy = yOf(0, c), n = h / UNIT;
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
