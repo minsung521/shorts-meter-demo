@@ -28,7 +28,7 @@
 <meta name="apple-mobile-web-app-title" content="쇼츠 길이">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gaegu:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
 <style>
   /* B안: 조금 투박하되 담백한 손그림 톤. 13 mini(375×812) 기준 */
   :root { --ink: #3B2A1E; --acc: #E8553D; --cream: #FFF8EA; --paper: #FBF5E8; --ok: #4F8A3C; }
@@ -36,8 +36,8 @@
   /* 문서 자체는 절대 스크롤되지 않음: 무대는 화면에 고정, 자세히 보기는 버튼을 눌렀을 때만 위에 덮이는 별도 화면.
      (이전엔 결과가 나오면 자세히 보기가 무대 바로 아래에 붙어서, 위로 쓸거나 인앱 툴바가 접히면 아래로 비쳐 보였음) */
   html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
-  html, body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Gaegu", sans-serif; letter-spacing: -0.05em; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; -webkit-tap-highlight-color: transparent; }   /* Gaegu는 기본 자간이 넓어 보여서 좁힘 */
-  .lede, .intro .lede, .finale .fs, .finale .fnote, .hud .sub, .soon, .pickScale, .range, .verdict, .foot { letter-spacing: -0.09em; word-spacing: 0.08em; }   /* Gaegu 본문: 글자 사이만 좁히고 단어 사이는 유지 */
+  html, body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Jua", sans-serif; letter-spacing: -0.01em; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; -webkit-tap-highlight-color: transparent; }
+  /* 글꼴은 Jua 하나로 통일 (설명 글 가독성). Jua는 굵기가 하나뿐이라 굵게(700) 대신 색·크기로 구분 */
   .btn, .q, h1, h2, h3, .pickQ, .pickV, .hud .alt, .finale .fn, .finale .pill, .ladder .n, .ladder .r { letter-spacing: -0.01em; }   /* Jua는 원래 자간 유지 */
   .stage { position: fixed; inset: 0; overflow: hidden; touch-action: none; -webkit-user-select: none; user-select: none; }   /* 보이는 화면을 정확히 채움 (vh·dvh 계산에 기대지 않음) */
   .stage.sa { bottom: auto; height: var(--appH, 100%); }   /* 홈 화면 앱 모드: JS가 화면 전체 높이로 맞춤 */
@@ -45,7 +45,7 @@
   .hud { position: absolute; left: 18px; top: calc(48px + env(safe-area-inset-top, 0px)); pointer-events: none; opacity: 0; transition: opacity .4s; }
   .hud.on { opacity: 1; }
   .hud .alt { font-family: "Jua", sans-serif; font-size: 46px; line-height: 1.05; font-variant-numeric: tabular-nums; }
-  .hud .sub { font-weight: 700; font-size: 16px; opacity: .78; }
+  .hud .sub { font-size: 14px; opacity: .78; }
   .intro { position: absolute; left: 0; right: 0; top: env(safe-area-inset-top, 0px); bottom: env(safe-area-inset-bottom, 0px); padding: 0 24px;
     display: flex; flex-direction: column; text-align: center; transition: opacity .4s, transform .4s;
     overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; touch-action: pan-y; }   /* 안내를 펼쳐 길어지면 이 안에서만 스크롤 */
@@ -53,14 +53,14 @@
   .intro .title { font-family: "Jua", sans-serif; font-size: 64px; line-height: 1.02; letter-spacing: -1px; }
   .intro .title b { color: var(--acc); font-weight: 400; }
   .intro .q { font-family: "Jua", sans-serif; font-size: 21px; margin: 12px 0 0; opacity: .85; }
-  .intro .lede { margin: 16px 0 0; font-size: 17px; }
+  .intro .lede { margin: 14px 0 0; font-size: 16px; }
   .introBtns { margin-top: 18px; display: flex; gap: 10px; justify-content: center; min-height: 48px; }
   .introBtns .btn { font-size: 20px; padding: 11px 34px 13px; }
   /* 하루 시청 시간 고르기 카드 (기존 파일 카드와 같은 종이·잉크 톤) */
   .pick { width: 100%; max-width: 360px; margin-top: 20px; background: var(--cream); border: 2.5px solid var(--ink); border-radius: 18px; box-shadow: 0 3px 0 var(--ink); padding: 12px 16px 10px; }
   .pickQ { font-family: "Jua", sans-serif; font-size: 18px; opacity: .85; }
   .pickV { font-family: "Jua", sans-serif; font-size: 40px; line-height: 1.1; color: var(--acc); margin: 2px 0 4px; font-variant-numeric: tabular-nums; }
-  .pickScale { display: flex; justify-content: space-between; font-weight: 700; font-size: 14px; opacity: .6; margin-top: 2px; }
+  .pickScale { display: flex; justify-content: space-between; font-size: 13px; opacity: .6; margin-top: 2px; }
   /* 슬라이더: iOS(인스타 인앱 포함)에서 엄지로 잡기 쉽게 큰 손잡이 + 높은 터치 영역 */
   .slider { -webkit-appearance: none; appearance: none; display: block; width: 100%; height: 44px; margin: 0; background: transparent; touch-action: none; cursor: pointer; }
   .slider:focus { outline: none; }
@@ -70,7 +70,7 @@
   .slider::-moz-range-progress { height: 9px; border-radius: 10px 0 0 10px; background: var(--acc); }
   .slider::-moz-range-thumb { width: 29px; height: 29px; border-radius: 50%; background: var(--cream); border: 2.5px solid var(--ink); box-shadow: 0 3px 0 var(--ink); }
   .slider:focus-visible::-webkit-slider-thumb { outline: 3px solid var(--acc); outline-offset: 2px; }
-  .soon { margin: 14px 0 0; font-weight: 700; font-size: 14px; opacity: .55; }
+  .soon { margin: 14px 0 0; font-size: 14px; opacity: .55; }
   /* 정밀 측정(보조): 시청 기록 올리기 */
   .btn.sub { margin-top: 14px; font-size: 16px; padding: 8px 16px 10px; background: transparent; box-shadow: none; border-width: 2px; }
   .btn.sub:active { transform: none; background: rgba(59,42,30,.06); }
@@ -79,50 +79,50 @@
     overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; touch-action: pan-y; transition: opacity .3s; }
   .up[hidden] { display: none; }
   .upIn { max-width: 400px; margin: 0 auto; padding: 14px 0 34px; display: flex; flex-direction: column; align-items: center; text-align: center; }
-  .back { align-self: flex-start; background: none; border: 0; padding: 6px 0; font: 700 15px "Gaegu", sans-serif; color: var(--ink); opacity: .7; cursor: pointer; }
+  .back { align-self: flex-start; background: none; border: 0; padding: 6px 0; font: 14px "Jua", sans-serif; color: var(--ink); opacity: .7; cursor: pointer; }
   .upTitle { font-family: "Jua", sans-serif; font-size: 30px; line-height: 1.15; margin: 2px 0 12px; }
   .upTitle b { color: var(--acc); font-weight: 400; }
   .guide { width: 100%; text-align: left; background: var(--cream); border: 2.5px solid var(--ink); border-radius: 16px; box-shadow: 0 3px 0 var(--ink); padding: 14px 14px 12px; }
   .guide h3 { font-family: "Jua", sans-serif; font-weight: 400; font-size: 19px; margin: 0 0 10px; letter-spacing: -0.01em; }
-  .guide h3 span { font-family: "Gaegu", sans-serif; font-weight: 700; font-size: 15px; opacity: .65; }
+  .guide h3 span { font-size: 14px; opacity: .6; }
   .steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; }
   .steps li { display: grid; grid-template-columns: 30px 1fr; gap: 8px; align-items: start; }
   .steps .n { font-family: "Jua", sans-serif; font-size: 22px; line-height: 1; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--acc); color: #fff; border: 2px solid var(--ink); }
-  .steps p { margin: 3px 0 0; font-weight: 700; font-size: 15.5px; line-height: 1.38; letter-spacing: -0.06em; word-break: keep-all; }
-  .steps b { font-family: "Jua", sans-serif; font-weight: 400; letter-spacing: -0.01em; }
+  .steps p { margin: 4px 0 0; font-size: 14.5px; line-height: 1.45; color: rgba(59,42,30,.78); word-break: keep-all; }
+  .steps b { font-weight: 400; color: var(--ink); -webkit-text-stroke: .45px var(--ink); }   /* 버튼 이름: 본문보다 진하고 두껍게 */
   .notes { list-style: none; margin: 10px 0 0; padding: 10px 0 0; border-top: 1.5px dashed rgba(59,42,30,.35); display: grid; gap: 3px; }
-  .notes li { font-weight: 700; font-size: 14px; line-height: 1.35; opacity: .75; letter-spacing: -0.06em; word-break: keep-all; }
+  .notes li { font-size: 13px; line-height: 1.45; opacity: .72; word-break: keep-all; }
   .guideBtns { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 12px; }
   .guideBtns .btn { font-size: 15px; padding: 7px 13px 9px; text-decoration: none; display: inline-block; }
-  .inappTip { margin: 6px 0 0; text-align: center; font-weight: 700; font-size: 13px; opacity: .65; }
+  .inappTip { margin: 6px 0 0; text-align: center; font-size: 12.5px; opacity: .65; }
   .upBtns { margin-top: 16px; }
   .upBtns .btn { font-size: 19px; padding: 11px 24px 13px; }
   .fileCard { display: none; width: 100%; box-sizing: border-box; text-align: left; margin-top: 14px; background: var(--cream); border: 2.5px solid var(--ink); border-radius: 14px; box-shadow: 0 3px 0 var(--ink); padding: 12px 14px; align-items: center; gap: 12px; }
   .fileCard.on { display: flex; }
   .fileIco { width: 34px; height: 42px; border: 2.5px solid var(--ink); border-radius: 5px 12px 5px 5px; background: #fff; position: relative; flex: none; }
-  .fileIco::after { content: attr(data-k); position: absolute; left: -6px; bottom: 5px; background: var(--acc); color: #fff; font: 700 9px/1 "Jua", sans-serif; padding: 3px 4px; border-radius: 4px; }
+  .fileIco::after { content: attr(data-k); position: absolute; left: -6px; bottom: 5px; background: var(--acc); color: #fff; font: 9px/1 "Jua", sans-serif; padding: 3px 4px; border-radius: 4px; }
   .fileCard > div:nth-child(2) { min-width: 0; }
   .fileName { font-family: "Jua", sans-serif; font-size: 17px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .fileMeta { white-space: nowrap; font-size: 14px; opacity: .65; font-weight: 700; overflow: hidden; text-overflow: ellipsis; }
+  .fileMeta { white-space: nowrap; font-size: 13px; opacity: .65; overflow: hidden; text-overflow: ellipsis; }
   .fileOk { margin-left: auto; white-space: nowrap; font-family: "Jua", sans-serif; color: var(--acc); font-size: 15px; }
   .anal { position: absolute; inset: 0; z-index: 30; display: flex; align-items: center; justify-content: center; background: rgba(255,248,234,.55); opacity: 0; pointer-events: none; transition: opacity .25s; }
   .anal.on { opacity: 1; pointer-events: auto; }
   .anal-card { width: 250px; background: var(--cream); border: 2.5px solid var(--ink); border-radius: 18px; box-shadow: 0 4px 0 var(--ink); padding: 18px 18px 16px; text-align: center; }
   .anal-t { font-family: "Jua", sans-serif; font-size: 21px; }
-  .anal-n { font-weight: 700; font-size: 15px; opacity: .7; margin: 4px 0 12px; font-variant-numeric: tabular-nums; letter-spacing: -0.06em; }
+  .anal-n { font-size: 14px; opacity: .7; margin: 4px 0 12px; font-variant-numeric: tabular-nums; }
   .anal-bar { height: 12px; border: 2px solid var(--ink); border-radius: 8px; overflow: hidden; background: #fff; }
   .anal-bar i { display: block; height: 100%; width: 0; background: var(--acc); transition: width .12s; }
   @media (max-height: 720px) { .intro .title { font-size: 54px; } }
   @media (max-height: 640px) { .intro .title { font-size: 46px; } .intro .q { margin-top: 8px; font-size: 19px; } .intro .lede { margin-top: 10px; font-size: 16px; } .pick { margin-top: 14px; } .pickV { font-size: 36px; } .introBtns { margin-top: 14px; } .soon { margin-top: 10px; } }
   @media (max-height: 700px) { .intro .lede { display: none; } }   /* 인앱처럼 짧은 화면: 설명 한 줄 생략 (정밀 측정 버튼 자리) */
   .intro.off { opacity: 0; transform: translateY(-12px); pointer-events: none; }
-  .eyebrow { font-weight: 700; font-size: 16px; color: var(--acc); }
+  .eyebrow { font-size: 15px; color: var(--acc); }
   h1 { font-family: "Jua", sans-serif; font-weight: 400; font-size: 36px; line-height: 1.18; margin: 4px 0 12px; }
   h1 b { color: var(--acc); font-weight: 400; }
-  .lede { font-weight: 700; font-size: 18px; line-height: 1.35; opacity: .82; margin: 0 0 8px; }
+  .lede { font-size: 16px; line-height: 1.4; opacity: .8; margin: 0 0 8px; }
   .note { font-size: 15px; opacity: .6; margin: 0; }
   details { margin-top: 10px; font-size: 15px; line-height: 1.4; }
-  summary { cursor: pointer; font-weight: 700; text-decoration: underline; }
+  summary { cursor: pointer; text-decoration: underline; }
   details ol { padding-left: 18px; margin: 6px 0 0; background: rgba(255,248,234,.85); border-radius: 10px; padding: 8px 8px 8px 26px; }
   .bar { position: absolute; left: 0; right: 0; bottom: 0; display: flex; gap: 10px; justify-content: center;
     padding: 12px 12px calc(14px + env(safe-area-inset-bottom, 0px)); transition: opacity .3s; }
@@ -132,7 +132,7 @@
   .btn.main { background: var(--acc); color: #fff; }
   .btn { touch-action: manipulation; }
   .btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--ink); }
-  .err { position: absolute; left: 16px; right: 16px; bottom: calc(76px + env(safe-area-inset-bottom, 0px)); text-align: center; font-weight: 700; color: var(--acc); }
+  .err { position: absolute; left: 16px; right: 16px; bottom: calc(76px + env(safe-area-inset-bottom, 0px)); text-align: center; color: var(--acc); }
   /* 도착 화면 A안: 숫자 포스터 */
   .finale { position: absolute; left: 0; right: 0; top: calc(86px + env(safe-area-inset-top, 0px)); text-align: center; pointer-events: none; opacity: 0; transform: translateY(12px); transition: opacity .5s, transform .6s cubic-bezier(.2,.8,.2,1); }
   .finale.on { opacity: 1; transform: none; }
@@ -140,16 +140,16 @@
     text-shadow: -2px 0 0 var(--ink), 2px 0 0 var(--ink), 0 -2px 0 var(--ink), 0 2px 0 var(--ink), -1.5px -1.5px 0 var(--ink), 1.5px -1.5px 0 var(--ink), -1.5px 1.5px 0 var(--ink), 1.5px 1.5px 0 var(--ink), 0 4px 0 var(--ink); }
   .finale .fn { font-family: "Jua", sans-serif; font-size: 96px; line-height: 1.08; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
   .finale .fs { display: flex; flex-direction: column; align-items: center; gap: 0; margin-top: 0; white-space: nowrap; }   /* 원래처럼 글자만, 두 줄로 나눠 크기만 키움 */
-  .finale .fs b { font-weight: 700; font-size: 19px; }
-  .finale .fs span { font-weight: 700; font-size: 15px; opacity: .72; }
+  .finale .fs b { font-weight: 400; font-size: 17px; }
+  .finale .fs span { font-size: 13px; opacity: .75; }
   .finale .pill { display: inline-block; margin-top: 12px; background: var(--acc); color: #fff; font-family: "Jua", sans-serif; font-size: 22px; padding: 9px 18px 11px; border: 2.5px solid var(--ink); border-radius: 999px; box-shadow: 0 3px 0 var(--ink); transform: rotate(-2deg) scale(.6); opacity: 0; transition: transform .45s cubic-bezier(.3,1.6,.5,1) .35s, opacity .2s .35s; }
   .finale.on .pill { transform: rotate(-2deg) scale(1); opacity: 1; }
   @media (max-height: 720px) {   /* 인스타 인앱 등 세로가 짧은 화면: 결과 묶음을 줄여 아래 그림 자리 확보 */
     .finale { top: calc(58px + env(safe-area-inset-top, 0px)); }
-    .finale .fk { font-size: 23px; } .finale .fn { font-size: 76px; } .finale .fs b { font-size: 17px; } .finale .fs span { font-size: 14px; }
-    .finale .pill { font-size: 19px; margin-top: 8px; padding: 7px 15px 9px; } .finale .fnote { margin-top: 8px !important; font-size: 12px !important; }
+    .finale .fk { font-size: 23px; } .finale .fn { font-size: 76px; } .finale .fs b { font-size: 15px; } .finale .fs span { font-size: 12px; }
+    .finale .pill { font-size: 19px; margin-top: 8px; padding: 7px 15px 9px; } .finale .fnote { margin-top: 8px !important; font-size: 11px !important; }
   }
-  .finale .fnote { display: block; margin: 12px auto 0; font-weight: 700; font-size: 13px; line-height: 1.3; opacity: .8; }   /* 계산 가정 한 줄 */
+  .finale .fnote { display: block; margin: 12px auto 0; font-size: 12px; line-height: 1.3; opacity: .8; }   /* 계산 가정 한 줄 */
   .arrive[hidden] { display: none; }
   .arrive { position: absolute; left: 12px; right: 12px; bottom: calc(78px + env(safe-area-inset-bottom, 0px)); background: var(--cream);
     border: 2.5px solid var(--ink); border-radius: 18px; box-shadow: 0 4px 0 var(--ink); padding: 14px 16px 12px;
@@ -167,18 +167,18 @@
   .res h1 { font-size: 30px; line-height: 1.15; margin: 2px 0 4px; }
   .panel { background: var(--cream); border: 2px solid var(--ink); border-radius: 14px; box-shadow: 0 3px 0 var(--ink); padding: 10px 14px 12px; margin-top: 12px; }
   .panel h3 { font-family: "Jua", sans-serif; font-weight: 400; font-size: 18px; margin: 0 0 4px; }
-  .range { font-size: 14px; opacity: .6; margin: 0 0 4px; }
-  .verdict { font-weight: 700; font-size: 16px; line-height: 1.35; margin: 0; opacity: .88; }
+  .range { font-size: 13px; opacity: .6; margin: 0 0 4px; }
+  .verdict { font-size: 14.5px; line-height: 1.45; margin: 0; opacity: .88; }
   .ladder { list-style: none; margin: 0; padding: 0; }
   .ladder li { display: grid; grid-template-columns: 18px 1fr 64px auto; gap: 6px; align-items: center; padding: 4px 6px; border-radius: 8px; }
-  .ladder .i { font-weight: 700; text-align: center; }
+  .ladder .i { text-align: center; }
   .ladder .n { font-family: "Jua", sans-serif; font-size: 15px; }
-  .ladder .h { font-weight: 700; font-size: 14px; opacity: .55; }
+  .ladder .h { font-size: 12.5px; opacity: .55; }
   .ladder .r { font-family: "Jua", sans-serif; font-size: 14px; text-align: right; }
   .ladder li.ok .i, .ladder li.ok .r { color: var(--ok); }
   .ladder li.next { background: rgba(246,184,168,.45); outline: 1.5px solid var(--ink); }
   .ladder li.next .i, .ladder li.next .r { color: var(--acc); }
-  .foot { font-size: 12px; line-height: 1.35; opacity: .6; margin: 12px 0; }
+  .foot { font-size: 11.5px; line-height: 1.5; opacity: .6; margin: 12px 0; }
   .bar2 { display: flex; gap: 10px; justify-content: center; }
   /* 배경 음악 음소거 버튼: 오른쪽 위 구석, 작게 */
   .snd { position: fixed; z-index: 25; top: calc(10px + env(safe-area-inset-top, 0px)); right: calc(10px + env(safe-area-inset-right, 0px)); width: 34px; height: 34px; padding: 0;
@@ -188,12 +188,12 @@
   .snd svg { width: 18px; height: 18px; display: block; }
   .snd .off { display: none; } .snd[aria-pressed="true"] .on { display: none; } .snd[aria-pressed="true"] .off { display: block; }
   /* 자세히 보기 맨 아래 '음악 출처' → 모달 */
-  .credit { display: block; margin: 10px auto 0; background: none; border: 0; padding: 4px 8px; font: 700 13px "Gaegu", sans-serif; color: var(--ink); opacity: .55; text-decoration: underline; cursor: pointer; }
+  .credit { display: block; margin: 10px auto 0; background: none; border: 0; padding: 4px 8px; font: 12px "Jua", sans-serif; color: var(--ink); opacity: .55; text-decoration: underline; cursor: pointer; }
   .modal { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; padding: 20px; background: rgba(59,42,30,.45); }
   .modal[hidden] { display: none; }
   .modal-card { width: 100%; max-width: 360px; background: var(--cream); border: 2.5px solid var(--ink); border-radius: 18px; box-shadow: 0 4px 0 var(--ink); padding: 16px 18px 14px; }
   .modal-card h3 { font-family: "Jua", sans-serif; font-weight: 400; font-size: 19px; margin: 0 0 8px; }
-  .modal-card p { margin: 0 0 6px; font-weight: 700; font-size: 15px; line-height: 1.4; letter-spacing: -0.05em; word-break: keep-all; overflow-wrap: anywhere; }
+  .modal-card p { margin: 0 0 6px; font-size: 14px; line-height: 1.45; word-break: keep-all; overflow-wrap: anywhere; }
   .modal-card a { color: var(--acc); }
   .modal-card .btn { display: block; margin: 12px auto 0; }
 </style>
@@ -537,7 +537,7 @@ function unitSide(o, x, fw, fh, sw) {
   return (TL.unitSide = yE - fh / 2 - 54 >= cutE ? 'above' : x + fw / 2 + sw <= W ? 'right' : 'below');   // 오른쪽은 화면 끝에 맞춰 붙이므로 그림에 몇 px 닿는 건 허용
 }
 function stickerBox(name, sub, cx, bottomY, minL = 0) {   // 라벨이 놓일 자리 (그리지 않고 계산만)
-  ctx.save(); ctx.font = '19px Jua'; const w1 = ctx.measureText(name).width; ctx.font = '700 15px Gaegu'; const w2 = ctx.measureText(sub).width; ctx.restore();
+  ctx.save(); ctx.font = '19px Jua'; const w1 = ctx.measureText(name).width; ctx.font = '13px Jua'; const w2 = ctx.measureText(sub).width; ctx.restore();
   const w = Math.max(w1, w2) + 22, h = 48; cx = Math.max(w / 2 + 6, minL + w / 2, Math.min(W - w / 2 - 6, cx));   // 화면 밖으로 안 나가게
   return { cx, w, h, x0: cx - w / 2, x1: cx + w / 2, y0: bottomY - h, y1: bottomY };
 }
@@ -551,7 +551,7 @@ function sticker(name, sub, cx, bottomY, alpha = 1, rot = -0.05, minL = 0) {
   ctx.fillStyle = '#fff'; rr(-w / 2, -h / 2, w, h, 10); ctx.fill(); ctx.strokeStyle = INK; ctx.lineWidth = 2; ctx.stroke();
   ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
   ctx.fillStyle = INK; ctx.font = '19px Jua'; ctx.fillText(name, 0, 1);
-  ctx.fillStyle = ACC; ctx.font = '700 15px Gaegu'; ctx.fillText(sub, 0, 17);
+  ctx.fillStyle = ACC; ctx.font = '13px Jua'; ctx.fillText(sub, 0, 17);
   ctx.restore();
 }
 const FALL_MS = 380, MOTION = location.hash === '#fold' ? 'fold' : 'fade';   // 오브젝트 모션 (기본 fade, 주소에 #fold 붙이면 종이판)
@@ -723,7 +723,7 @@ function showLineupCard() {   // (이전 도착 카드: 지금은 안 씀)
   // 모두 같은 비율(px/m)로 세움. 가로로 넓은 산(후지산 등)이 들어가도록 폭을 나눠 씀. 작은 건 라벨 폭만큼 자리 확보
   const base = r.height - 22, LW = 56, top0 = shown[shown.length - 1];
   const realW = o => o.h * (o.img ? o.aspect : Math.min(o.aspect, 1.2));
-  const label = (o, cx, gap) => { c2.fillStyle = INK; c2.globalAlpha = .8; c2.font = '700 12px Gaegu'; c2.textAlign = 'center'; const full = o.short || o.name; let nm = full; while (nm.length > 2 && c2.measureText(nm).width > gap - 4) nm = nm.slice(0, -1); if (nm !== full) nm = nm.slice(0, -1) + '…'; c2.fillText(nm, cx, r.height - 4); c2.globalAlpha = 1; };
+  const label = (o, cx, gap) => { c2.fillStyle = INK; c2.globalAlpha = .8; c2.font = '11px Jua'; c2.textAlign = 'center'; const full = o.short || o.name; let nm = full; while (nm.length > 2 && c2.measureText(nm).width > gap - 4) nm = nm.slice(0, -1); if (nm !== full) nm = nm.slice(0, -1) + '…'; c2.fillText(nm, cx, r.height - 4); c2.globalAlpha = 1; };
   if (top0.img && realW(top0) * (base - 6) / top0.h > r.width * 0.6) {   // 도착 산이 옆으로 넓으면(후지산 사진): 산을 뒤에 크게 깔고, 나머지는 그 앞에 같은 비율로 세움
     const sc2 = (base - 6) * 0.82 / top0.h, peakX = r.width * 0.74, rest = shown.slice(0, -1), gap = r.width * 0.56 / Math.max(rest.length, 1);
     drawObj(top0, peakX, base, top0.h * sc2, 1, c2);
@@ -746,7 +746,7 @@ function showLineupCard() {   // (이전 도착 카드: 지금은 안 씀)
     const gap = slots[i] + extra, cx = xc + gap / 2; xc += gap;
     const hp = Math.max(o.h * sc, 4);
     drawObj(o.img ? o : { ...o, aspect: Math.min(o.aspect, 1.2, gap * 0.92 / hp) }, cx, base, hp, 1, c2);
-    c2.fillStyle = INK; c2.globalAlpha = .8; c2.font = '700 12px Gaegu'; c2.textAlign = 'center'; const full = o.short || o.name; let nm = full; while (nm.length > 2 && c2.measureText(nm).width > gap - 4) nm = nm.slice(0, -1); if (nm !== full) nm = nm.slice(0, -1) + '…'; c2.fillText(nm, cx, r.height - 4); c2.globalAlpha = 1;
+    c2.fillStyle = INK; c2.globalAlpha = .8; c2.font = '11px Jua'; c2.textAlign = 'center'; const full = o.short || o.name; let nm = full; while (nm.length > 2 && c2.measureText(nm).width > gap - 4) nm = nm.slice(0, -1); if (nm !== full) nm = nm.slice(0, -1) + '…'; c2.fillText(nm, cx, r.height - 4); c2.globalAlpha = 1;
   });
   c2.fillStyle = INK; c2.fillRect(0, base, r.width, 2);
   $('tiny').textContent = hidden.length ? `같은 비율로 세우면 ${hidden.slice(0, 2).map(o => o.name).join('·')} 등 ${hidden.length}개는 너무 작아서 안 보여요.` : '';
@@ -886,9 +886,9 @@ function fitStandalone() {
 }
 fitStandalone(); addEventListener('orientationchange', () => setTimeout(refit, 300));
 layout();
-// 캔버스 글씨(Jua·Gaegu)는 한글 조각 파일을 미리 받아 둠. 늦게 받아져도 다시 그림. 글꼴이 안 와도 1.5초 뒤엔 그냥 진행
+// 캔버스 글씨(Jua)는 한글 조각 파일을 미리 받아 둠. 늦게 받아져도 다시 그림. 글꼴이 안 와도 1.5초 뒤엔 그냥 진행
 const FONT_TXT = '쇼츠길이측정기0123456789,.mk에베레스트후지산한라산백두산킬리만자로부르즈할리파성층권자유낙하기록여객기순항고도기상관측구';
-Promise.race([Promise.all([document.fonts.load('19px Jua', FONT_TXT), document.fonts.load('700 15px Gaegu', FONT_TXT)]), new Promise(r => setTimeout(r, 1500))])
+Promise.race([Promise.all([document.fonts.load('19px Jua', FONT_TXT), document.fonts.load('13px Jua', FONT_TXT)]), new Promise(r => setTimeout(r, 1500))])
   .catch(() => {}).finally(() => { if (!playing && !arrived) showStart(); else redraw(); });
 if (document.fonts && document.fonts.addEventListener) document.fonts.addEventListener('loadingdone', redraw);
 SHORT_IMGS.forEach(im => im.onload = redraw);
