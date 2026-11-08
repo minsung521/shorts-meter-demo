@@ -137,11 +137,28 @@
   .ladder li.next .i, .ladder li.next .r { color: var(--acc); }
   .foot { font-size: 12px; line-height: 1.35; opacity: .6; margin: 12px 0; }
   .bar2 { display: flex; gap: 10px; justify-content: center; }
+  /* 배경 음악 음소거 버튼: 오른쪽 위 구석, 작게 */
+  .snd { position: fixed; z-index: 25; top: calc(10px + env(safe-area-inset-top, 0px)); right: calc(10px + env(safe-area-inset-right, 0px)); width: 34px; height: 34px; padding: 0;
+    display: grid; place-items: center; border-radius: 50%; border: 2px solid var(--ink); background: rgba(255,248,234,.92); color: var(--ink); box-shadow: 0 2px 0 var(--ink); cursor: pointer; touch-action: manipulation; }
+  .snd:active { transform: translateY(1px); box-shadow: 0 1px 0 var(--ink); }
+  .snd svg { width: 18px; height: 18px; display: block; }
+  .snd .off { display: none; } .snd[aria-pressed="true"] .on { display: none; } .snd[aria-pressed="true"] .off { display: block; }
+  /* 자세히 보기 맨 아래 '음악 출처' → 모달 */
+  .credit { display: block; margin: 10px auto 0; background: none; border: 0; padding: 4px 8px; font: 700 13px "Gaegu", sans-serif; color: var(--ink); opacity: .55; text-decoration: underline; cursor: pointer; }
+  .modal { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; padding: 20px; background: rgba(59,42,30,.45); }
+  .modal[hidden] { display: none; }
+  .modal-card { width: 100%; max-width: 360px; background: var(--cream); border: 2.5px solid var(--ink); border-radius: 18px; box-shadow: 0 4px 0 var(--ink); padding: 16px 18px 14px; }
+  .modal-card h3 { font-family: "Jua", sans-serif; font-weight: 400; font-size: 19px; margin: 0 0 8px; }
+  .modal-card p { margin: 0 0 6px; font-weight: 700; font-size: 15px; line-height: 1.4; letter-spacing: -0.05em; word-break: keep-all; overflow-wrap: anywhere; }
+  .modal-card a { color: var(--acc); }
+  .modal-card .btn { display: block; margin: 12px auto 0; }
 </style>
 </head>
 <body>
 <div class="stage" id="stage">
   <canvas id="cv"></canvas>
+  <button class="snd" id="snd" type="button" aria-pressed="false" aria-label="배경 음악 끄기"><svg class="on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg><svg class="off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path d="M17 9l5 6M22 9l-5 6"/></svg></button>
+  <audio id="bgm" src="assets/bgm.m4a" preload="none" loop playsinline></audio>
   <div class="hud" id="hud"><div class="alt" id="alt">0m</div><div class="sub" id="sub"></div></div>
   <div class="intro" id="intro">
     <div class="title">쇼츠 <b>길이</b><br>측정기</div>
@@ -168,7 +185,19 @@
   <div class="panel"><h3>고도표</h3><ul class="ladder" id="ladder"></ul></div>
   <p class="foot" id="foot"></p>
   <div class="bar2"><button class="btn main" type="button" data-act="again">다시 하기</button><button class="btn" type="button" data-act="close">결과로 돌아가기</button></div>
+  <button class="credit" type="button" data-act="credit">배경 음악 출처</button>
 </div></section>
+<div class="modal" id="creditModal" hidden role="dialog" aria-modal="true" aria-labelledby="creditTitle">
+  <div class="modal-card">
+    <h3 id="creditTitle">배경 음악 출처</h3>
+    <p>Frédéric Chopin, Nocturne Op.9 No.2</p>
+    <p>연주: Martha Goldstein (2006)</p>
+    <p>연주 녹음 라이선스: <a href="https://creativecommons.org/licenses/by-sa/2.0/deed.ko" target="_blank" rel="noopener">CC BY-SA 2.0</a> · 작곡은 퍼블릭 도메인</p>
+    <p>출처: <a href="https://commons.wikimedia.org/wiki/File:Frederic_Chopin_-_Nocturne_Eb_major_Opus_9,_number_2.ogg" target="_blank" rel="noopener">Wikimedia Commons</a></p>
+    <p>이 페이지의 음원은 원본을 AAC로 변환한 것이며, 같은 CC BY-SA 2.0으로 제공됩니다.</p>
+    <button class="btn" type="button" data-act="creditClose">닫기</button>
+  </div>
+</div>
 <script>
 /* ===== 계산 가정 (값을 바꾸려면 여기만 고치면 됨) ===== */
 const SEC_PER_SHORT = 20;                                 // 쇼츠 1편 평균 시청 시간(초)
@@ -733,13 +762,15 @@ function toTop(after) { $('res').hidden = true; window.scrollTo(0, 0); after(); 
 function openDetail() { const r = $('res'); r.hidden = false; r.scrollTop = 0; }
 document.addEventListener('click', e => {
   const a = e.target.closest('[data-act]');
-  if (!a) { if (playing && !arrived && e.target.closest('#stage')) skip = true; return; }
+  if (!a) { if (playing && !arrived && e.target.closest('#stage') && !e.target.closest('#snd')) skip = true; return; }   // 음소거 버튼은 건너뛰기 아님
   const act = a.dataset.act;
-  if (act === 'go') { data = estimate(+sl.value); toTop(play); }
+  if (act === 'go') { startBgm(); data = estimate(+sl.value); toTop(play); }   // 음악은 이 사용자 동작에 맞춰 시작
   if (act === 'again') toTop(showStart);                     // 입력 화면으로 (고른 값은 그대로)
   if (act === 'replay') toTop(play);
   if (act === 'result') openDetail();
   if (act === 'close') $('res').hidden = true;
+  if (act === 'credit') $('creditModal').hidden = false;
+  if (act === 'creditClose') $('creditModal').hidden = true;
 });
 const redraw = () => { if (TL && (!raf || arrived)) frame(arrived ? TL.climbEnd + END_HOLD : 0); };
 let fitRaf = 0;
@@ -780,6 +811,41 @@ SHORT_IMGS.forEach(im => im.onload = redraw);
 catImg.onload = redraw;
 showStart();
 track('$pageview');                                       // 방문
+
+/* ===== 배경 음악 (쇼팽 녹턴 Op.9 No.2) =====
+   iOS·인스타 인앱은 자동 재생을 막으므로 '측정하기'를 누르는 순간 시작. 음원은 그때 처음 받음(preload none).
+   iOS는 audio.volume을 무시하므로 Web Audio 게인으로 볼륨 0.4 + 1초 페이드인 (없는 브라우저는 audio.volume) */
+const BGM_VOL = 0.4, BGM_FADE = 1;
+const bgm = $('bgm'), sndBtn = $('snd');
+let actx = null, gain = null, bgmWanted = false, bgmBgPaused = false;
+let muted = false; try { muted = localStorage.getItem('sm_bgm_muted') === '1'; } catch (_) {}
+function setSndUi() { sndBtn.setAttribute('aria-pressed', String(muted)); sndBtn.setAttribute('aria-label', muted ? '배경 음악 켜기' : '배경 음악 끄기'); }
+function ensureGraph() {   // 사용자 동작 안에서 한 번만 만듦
+  if (actx || !(window.AudioContext || window.webkitAudioContext)) return;
+  try { actx = new (window.AudioContext || window.webkitAudioContext)(); const src = actx.createMediaElementSource(bgm); gain = actx.createGain(); gain.gain.value = 0; src.connect(gain).connect(actx.destination); }
+  catch (_) { actx = null; gain = null; }
+}
+function fadeTo(v, sec) {
+  if (gain && actx) { const t = actx.currentTime; gain.gain.cancelScheduledValues(t); gain.gain.setValueAtTime(gain.gain.value, t); gain.gain.linearRampToValueAtTime(v, t + sec); }
+  else { const v0 = bgm.volume, s0 = performance.now(); const step = now => { const k = Math.min(1, (now - s0) / (sec * 1000)); bgm.volume = v0 + (v - v0) * k; if (k < 1) requestAnimationFrame(step); }; requestAnimationFrame(step); }
+}
+function startBgm() {   // 반드시 클릭 같은 사용자 동작 안에서 호출
+  bgmWanted = true; if (muted) return;
+  ensureGraph(); if (actx && actx.state !== 'running') actx.resume().catch(() => {});
+  if (!bgm.paused) return;   // 이미 재생 중이면(다시 하기 등) 그대로 이어서
+  if (gain) gain.gain.value = 0; else bgm.volume = 0;
+  const p = bgm.play(); if (p && p.then) p.then(() => fadeTo(BGM_VOL, BGM_FADE)).catch(() => {}); else fadeTo(BGM_VOL, BGM_FADE);
+}
+sndBtn.addEventListener('click', () => {
+  muted = !muted; setSndUi(); try { localStorage.setItem('sm_bgm_muted', muted ? '1' : '0'); } catch (_) {}
+  if (muted) bgm.pause(); else if (bgmWanted) startBgm();   // 켜면: 이미 측정을 시작했던 경우에만 바로 재생
+});
+document.addEventListener('visibilitychange', () => {   // 다른 탭·백그라운드면 일시정지, 돌아오면 이어서
+  if (document.hidden) { if (!bgm.paused) { bgmBgPaused = true; bgm.pause(); } }
+  else if (bgmBgPaused && !muted) { bgmBgPaused = false; if (actx && actx.state !== 'running') actx.resume().catch(() => {}); bgm.play().catch(() => {}); }
+});
+addEventListener('pagehide', () => { if (!bgm.paused) { bgmBgPaused = true; bgm.pause(); } });
+setSndUi();
 </script>
 </body>
 </html>
