@@ -46,8 +46,10 @@
   .hud.on { opacity: 1; }
   .hud .alt { font-family: "Jua", sans-serif; font-size: 46px; line-height: 1.05; font-variant-numeric: tabular-nums; }
   .hud .sub { font-weight: 700; font-size: 16px; opacity: .78; }
-  .intro { position: absolute; left: 24px; right: 24px; top: env(safe-area-inset-top, 0px); bottom: calc(30px + env(safe-area-inset-bottom, 0px));
-    display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; transition: opacity .4s, transform .4s; }
+  .intro { position: absolute; left: 0; right: 0; top: env(safe-area-inset-top, 0px); bottom: env(safe-area-inset-bottom, 0px); padding: 0 24px;
+    display: flex; flex-direction: column; text-align: center; transition: opacity .4s, transform .4s;
+    overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; touch-action: pan-y; }   /* 안내를 펼쳐 길어지면 이 안에서만 스크롤 */
+  .introIn { margin: auto 0; padding: 12px 0 30px; display: flex; flex-direction: column; align-items: center; }   /* 짧으면 가운데, 길면 위에서부터 */
   .intro .title { font-family: "Jua", sans-serif; font-size: 64px; line-height: 1.02; letter-spacing: -1px; }
   .intro .title b { color: var(--acc); font-weight: 400; }
   .intro .q { font-family: "Jua", sans-serif; font-size: 21px; margin: 12px 0 0; opacity: .85; }
@@ -69,9 +71,50 @@
   .slider::-moz-range-thumb { width: 29px; height: 29px; border-radius: 50%; background: var(--cream); border: 2.5px solid var(--ink); box-shadow: 0 3px 0 var(--ink); }
   .slider:focus-visible::-webkit-slider-thumb { outline: 3px solid var(--acc); outline-offset: 2px; }
   .soon { margin: 14px 0 0; font-weight: 700; font-size: 14px; opacity: .55; }
+  /* 정밀 측정(보조): 시청 기록 올리기 */
+  .btn.sub { margin-top: 14px; font-size: 16px; padding: 8px 16px 10px; background: transparent; box-shadow: none; border-width: 2px; }
+  .btn.sub:active { transform: none; background: rgba(59,42,30,.06); }
+  /* ----- 정밀 측정: 업로드 화면 (v2 데모의 파일 카드·분석 막대 디자인을 git 기록에서 되살림) ----- */
+  .up { position: absolute; inset: 0; top: env(safe-area-inset-top, 0px); bottom: env(safe-area-inset-bottom, 0px); padding: 0 18px; z-index: 6;
+    overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; touch-action: pan-y; transition: opacity .3s; }
+  .up[hidden] { display: none; }
+  .upIn { max-width: 400px; margin: 0 auto; padding: 14px 0 34px; display: flex; flex-direction: column; align-items: center; text-align: center; }
+  .back { align-self: flex-start; background: none; border: 0; padding: 6px 0; font: 700 15px "Gaegu", sans-serif; color: var(--ink); opacity: .7; cursor: pointer; }
+  .upTitle { font-family: "Jua", sans-serif; font-size: 30px; line-height: 1.15; margin: 2px 0 12px; }
+  .upTitle b { color: var(--acc); font-weight: 400; }
+  .guide { width: 100%; text-align: left; background: var(--cream); border: 2.5px solid var(--ink); border-radius: 16px; box-shadow: 0 3px 0 var(--ink); padding: 14px 14px 12px; }
+  .guide h3 { font-family: "Jua", sans-serif; font-weight: 400; font-size: 19px; margin: 0 0 10px; letter-spacing: -0.01em; }
+  .guide h3 span { font-family: "Gaegu", sans-serif; font-weight: 700; font-size: 15px; opacity: .65; }
+  .steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; }
+  .steps li { display: grid; grid-template-columns: 30px 1fr; gap: 8px; align-items: start; }
+  .steps .n { font-family: "Jua", sans-serif; font-size: 22px; line-height: 1; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--acc); color: #fff; border: 2px solid var(--ink); }
+  .steps p { margin: 3px 0 0; font-weight: 700; font-size: 15.5px; line-height: 1.38; letter-spacing: -0.06em; word-break: keep-all; }
+  .steps b { font-family: "Jua", sans-serif; font-weight: 400; letter-spacing: -0.01em; }
+  .notes { list-style: none; margin: 10px 0 0; padding: 10px 0 0; border-top: 1.5px dashed rgba(59,42,30,.35); display: grid; gap: 3px; }
+  .notes li { font-weight: 700; font-size: 14px; line-height: 1.35; opacity: .75; letter-spacing: -0.06em; word-break: keep-all; }
+  .guideBtns { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 12px; }
+  .guideBtns .btn { font-size: 15px; padding: 7px 13px 9px; text-decoration: none; display: inline-block; }
+  .inappTip { margin: 6px 0 0; text-align: center; font-weight: 700; font-size: 13px; opacity: .65; }
+  .upBtns { margin-top: 16px; }
+  .upBtns .btn { font-size: 19px; padding: 11px 24px 13px; }
+  .fileCard { display: none; width: 100%; box-sizing: border-box; text-align: left; margin-top: 14px; background: var(--cream); border: 2.5px solid var(--ink); border-radius: 14px; box-shadow: 0 3px 0 var(--ink); padding: 12px 14px; align-items: center; gap: 12px; }
+  .fileCard.on { display: flex; }
+  .fileIco { width: 34px; height: 42px; border: 2.5px solid var(--ink); border-radius: 5px 12px 5px 5px; background: #fff; position: relative; flex: none; }
+  .fileIco::after { content: attr(data-k); position: absolute; left: -6px; bottom: 5px; background: var(--acc); color: #fff; font: 700 9px/1 "Jua", sans-serif; padding: 3px 4px; border-radius: 4px; }
+  .fileCard > div:nth-child(2) { min-width: 0; }
+  .fileName { font-family: "Jua", sans-serif; font-size: 17px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .fileMeta { white-space: nowrap; font-size: 14px; opacity: .65; font-weight: 700; overflow: hidden; text-overflow: ellipsis; }
+  .fileOk { margin-left: auto; white-space: nowrap; font-family: "Jua", sans-serif; color: var(--acc); font-size: 15px; }
+  .anal { position: absolute; inset: 0; z-index: 30; display: flex; align-items: center; justify-content: center; background: rgba(255,248,234,.55); opacity: 0; pointer-events: none; transition: opacity .25s; }
+  .anal.on { opacity: 1; pointer-events: auto; }
+  .anal-card { width: 250px; background: var(--cream); border: 2.5px solid var(--ink); border-radius: 18px; box-shadow: 0 4px 0 var(--ink); padding: 18px 18px 16px; text-align: center; }
+  .anal-t { font-family: "Jua", sans-serif; font-size: 21px; }
+  .anal-n { font-weight: 700; font-size: 15px; opacity: .7; margin: 4px 0 12px; font-variant-numeric: tabular-nums; letter-spacing: -0.06em; }
+  .anal-bar { height: 12px; border: 2px solid var(--ink); border-radius: 8px; overflow: hidden; background: #fff; }
+  .anal-bar i { display: block; height: 100%; width: 0; background: var(--acc); transition: width .12s; }
   @media (max-height: 720px) { .intro .title { font-size: 54px; } }
   @media (max-height: 640px) { .intro .title { font-size: 46px; } .intro .q { margin-top: 8px; font-size: 19px; } .intro .lede { margin-top: 10px; font-size: 16px; } .pick { margin-top: 14px; } .pickV { font-size: 36px; } .introBtns { margin-top: 14px; } .soon { margin-top: 10px; } }
-  @media (max-height: 560px) { .intro .lede { display: none; } }
+  @media (max-height: 700px) { .intro .lede { display: none; } }   /* 인앱처럼 짧은 화면: 설명 한 줄 생략 (정밀 측정 버튼 자리) */
   .intro.off { opacity: 0; transform: translateY(-12px); pointer-events: none; }
   .eyebrow { font-weight: 700; font-size: 16px; color: var(--acc); }
   h1 { font-family: "Jua", sans-serif; font-weight: 400; font-size: 36px; line-height: 1.18; margin: 4px 0 12px; }
@@ -140,6 +183,7 @@
   /* 배경 음악 음소거 버튼: 오른쪽 위 구석, 작게 */
   .snd { position: fixed; z-index: 25; top: calc(10px + env(safe-area-inset-top, 0px)); right: calc(10px + env(safe-area-inset-right, 0px)); width: 34px; height: 34px; padding: 0;
     display: grid; place-items: center; border-radius: 50%; border: 2px solid var(--ink); background: rgba(255,248,234,.92); color: var(--ink); box-shadow: 0 2px 0 var(--ink); cursor: pointer; touch-action: manipulation; }
+  .snd[hidden] { display: none; }
   .snd:active { transform: translateY(1px); box-shadow: 0 1px 0 var(--ink); }
   .snd svg { width: 18px; height: 18px; display: block; }
   .snd .off { display: none; } .snd[aria-pressed="true"] .on { display: none; } .snd[aria-pressed="true"] .off { display: block; }
@@ -160,7 +204,7 @@
   <button class="snd" id="snd" type="button" aria-pressed="false" aria-label="배경 음악 끄기"><svg class="on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg><svg class="off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path d="M17 9l5 6M22 9l-5 6"/></svg></button>
   <audio id="bgm" src="assets/bgm.m4a" preload="none" loop playsinline></audio>
   <div class="hud" id="hud"><div class="alt" id="alt">0m</div><div class="sub" id="sub"></div></div>
-  <div class="intro" id="intro">
+  <div class="intro" id="intro"><div class="introIn">
     <div class="title">쇼츠 <b>길이</b><br>측정기</div>
     <p class="q">내가 본 쇼츠, 어디까지 닿을까?</p>
     <p class="lede">1년 동안 본 쇼츠를 한 칸씩<br>세로로 이어 붙여 길이를 재봐요.</p>
@@ -171,9 +215,35 @@
       <div class="pickScale" aria-hidden="true"><span>10분</span><span>5시간+</span></div>
     </div>
     <div class="introBtns" id="introBtns"></div>
-    <p class="soon">유튜브 시청 기록 기반 정밀 측정은 준비 중이에요</p>
-  </div>
-  <div class="finale" id="finale"><div class="fk">1년 동안 본 쇼츠 길이</div><div class="fn" id="finN"></div><div class="fs" id="finS"></div><div class="pill" id="finP"></div><div class="fnote" id="finNote"></div></div>
+    <button class="btn sub" type="button" data-act="precise">내 시청 기록으로 정확하게 재기</button>
+  </div></div>
+  <div class="up" id="up" hidden><div class="upIn">
+    <button class="back" type="button" data-act="upBack">← 하루 시청 시간으로 재기</button>
+    <div class="upTitle">내 시청 기록으로<br><b>정확하게</b> 재기</div>
+    <div class="guide">
+      <h3>내 시청 기록 받는 법 <span>(3분 + 메일 기다리기)</span></h3>
+      <ol class="steps">
+        <li><span class="n">1</span><p>아래 <b>[구글 테이크아웃 열기]</b> 버튼을 눌러요. Safari나 크롬에서 열어 주세요. 인스타 안에서는 구글 로그인이 막힐 수 있어요.</p></li>
+        <li><span class="n">2</span><p>맨 위 <b>'선택 해제'</b>를 누르고, 아래로 내려 <b>'YouTube 및 YouTube Music'</b>만 체크해요.</p></li>
+        <li><span class="n">3</span><p>그 아래 <b>'모든 YouTube 데이터 포함됨'</b>을 눌러 <b>'기록'</b>만 남기고 <b>확인</b>을 눌러요.</p></li>
+        <li><span class="n">4</span><p>맨 아래 <b>'다음 단계'</b> → <b>'내보내기 생성'</b>을 눌러요.</p></li>
+        <li><span class="n">5</span><p>몇 분에서 몇 시간 뒤 메일이 와요. 메일에서 zip 파일을 받아요.</p></li>
+        <li><span class="n">6</span><p>이 페이지로 돌아와 받은 zip을 그대로 올리면 끝이에요. 압축은 풀지 않아도 돼요.</p></li>
+      </ol>
+      <ul class="notes">
+        <li>· 유튜브 시청 기록을 꺼 뒀다면 기록이 비어 있어요.</li>
+        <li>· 기다리는 동안 이 페이지 링크를 저장해 두세요.</li>
+        <li>· 파일은 내 폰 안에서만 분석되고 어디에도 올라가지 않아요.</li>
+      </ul>
+      <div class="guideBtns"><a class="btn" id="takeoutBtn" href="https://takeout.google.com/settings/takeout/custom/youtube" target="_blank" rel="noopener">구글 테이크아웃 열기</a><button class="btn" type="button" data-act="copyLink" id="copyBtn">이 페이지 링크 복사</button></div>
+      <p class="inappTip" id="inappTip" hidden>오른쪽 위 ··· → 외부 브라우저로 열기</p>
+    </div>
+    <div class="upBtns"><button class="btn main" type="button" data-act="pick">내 시청 기록 넣기</button></div>
+    <div class="fileCard" id="fileCard"><div class="fileIco" id="fileIco" data-k="ZIP"></div><div><div class="fileName" id="fileName"></div><div class="fileMeta" id="fileMeta"></div></div><div class="fileOk" id="fileOk">선택됨</div></div>
+    <input type="file" id="file" accept=".zip,.json,.html,.htm,application/zip,application/x-zip-compressed,application/json,text/html" hidden>
+  </div></div>
+  <div class="anal" id="anal"><div class="anal-card"><div class="anal-t">시청 기록 분석 중…</div><div class="anal-n" id="analN">0%</div><div class="anal-bar"><i id="analBar"></i></div></div></div>
+  <div class="finale" id="finale"><div class="fk" id="finK">1년 동안 본 쇼츠 길이</div><div class="fn" id="finN"></div><div class="fs" id="finS"></div><div class="pill" id="finP"></div><div class="fnote" id="finNote"></div></div>
   <div class="arrive" id="arrive" hidden><h2 id="arriveTitle"></h2><canvas id="lineup"></canvas><div class="tiny" id="tiny"></div></div>
   <div class="err" id="err"></div>
   <div class="bar" id="bar"></div>
@@ -187,14 +257,14 @@
   <div class="bar2"><button class="btn main" type="button" data-act="again">다시 하기</button><button class="btn" type="button" data-act="close">결과로 돌아가기</button></div>
   <button class="credit" type="button" data-act="credit">배경 음악 출처</button>
 </div></section>
+<div class="modal" id="msgModal" hidden role="alertdialog" aria-modal="true" aria-labelledby="msgTitle">
+  <div class="modal-card"><h3 id="msgTitle"></h3><p id="msgBody"></p><button class="btn" type="button" data-act="msgClose">확인</button></div>
+</div>
 <div class="modal" id="creditModal" hidden role="dialog" aria-modal="true" aria-labelledby="creditTitle">
   <div class="modal-card">
     <h3 id="creditTitle">배경 음악 출처</h3>
     <p>Frédéric Chopin, Nocturne Op.9 No.2</p>
-    <p>연주: Martha Goldstein (2006)</p>
-    <p>연주 녹음 라이선스: <a href="https://creativecommons.org/licenses/by-sa/2.0/deed.ko" target="_blank" rel="noopener">CC BY-SA 2.0</a> · 작곡은 퍼블릭 도메인</p>
-    <p>출처: <a href="https://commons.wikimedia.org/wiki/File:Frederic_Chopin_-_Nocturne_Eb_major_Opus_9,_number_2.ogg" target="_blank" rel="noopener">Wikimedia Commons</a></p>
-    <p>이 페이지의 음원은 원본을 AAC로 변환한 것이며, 같은 CC BY-SA 2.0으로 제공됩니다.</p>
+    <p>작곡은 퍼블릭 도메인이에요.</p>
     <button class="btn" type="button" data-act="creditClose">닫기</button>
   </div>
 </div>
@@ -618,12 +688,17 @@ function compareBadge(dist) {
   const u = unitAt(dist); if (!u) return '';
   return `${u.unit || u.name} ${unitMult(dist, u)}개 높이`;
 }
+// 정밀 측정: 기간 표시는 KST
+const kstDate = ms => { const d = new Date(ms + 9 * 3600000); return `${String(d.getUTCFullYear()).slice(2)}.${String(d.getUTCMonth() + 1).padStart(2, '0')}.${String(d.getUTCDate()).padStart(2, '0')}`; };
+const periodLabel = d => d.precise ? (d.precise.days >= 365 ? '1년 동안 본 쇼츠 길이' : `${d.precise.days}일 동안 본 쇼츠 길이`) : '1년 동안 본 쇼츠 길이';
 function fillFinale(d) {   // 결과 숫자 묶음 글자를 채우고, 그 아래 끝 위치(px)를 돌려줌
-  const dist = d.dist;
+  const dist = d.dist, P = d.precise;
+  $('finK').textContent = periodLabel(d);
   $('finN').textContent = bigFmt(dist);
-  $('finS').innerHTML = `<b>쇼츠 ${fmt(d.shorts)}편 × ${SCREEN_CM}cm</b><span>하루 ${perDay(d.minutes)}씩 1년${dist >= 10000 ? ' · ' + fmt(dist) + 'm' : ''}</span>`;
+  $('finS').innerHTML = P ? `<b>쇼츠 ${fmt(d.shorts)}편 × ${SCREEN_CM}cm</b><span>내 시청 기록 기준 · ${P.range}${dist >= 10000 ? ' · ' + fmt(dist) + 'm' : ''}</span>`
+    : `<b>쇼츠 ${fmt(d.shorts)}편 × ${SCREEN_CM}cm</b><span>하루 ${perDay(d.minutes)}씩 1년${dist >= 10000 ? ' · ' + fmt(dist) + 'm' : ''}</span>`;
   $('finP').textContent = compareBadge(dist);
-  $('finNote').textContent = `쇼츠 1편 평균 ${SEC_PER_SHORT}초 · 화면 높이 ${SCREEN_CM}cm로 계산`;
+  $('finNote').textContent = P ? '시청 기록의 시간 간격으로 쇼츠를 골라냈어요' : `쇼츠 1편 평균 ${SEC_PER_SHORT}초 · 화면 높이 ${SCREEN_CM}cm로 계산`;
   return $('finNote').getBoundingClientRect().bottom - $('stage').getBoundingClientRect().top;
 }
 function showArrive(on) {   // A안: 카드 대신 화면 위쪽에 큰 숫자 + 배수 태그
@@ -679,8 +754,9 @@ function showLineupCard() {   // (이전 도착 카드: 지금은 안 씀)
 }
 function buildResult() {
   const d = data, dist = TL.dist, top = unitAt(dist), next = OBJECTS.find(o => o.kind !== 'line' && o.h > dist), space = 100000;
-  $('resTitle').innerHTML = `1년 동안 본 쇼츠 길이<br><b>${lenFmt(dist)}</b>`;
-  $('range').textContent = `하루 ${perDay(d.minutes)} × ${DAYS}일 · 쇼츠 ${fmt(d.shorts)}편 (추정치)`;
+  $('resTitle').innerHTML = `${periodLabel(d)}<br><b>${lenFmt(dist)}</b>`;
+  $('range').textContent = d.precise ? `내 시청 기록 기준 · ${d.precise.range} (${d.precise.days}일) · 쇼츠 ${fmt(d.shorts)}편`
+    : `하루 ${perDay(d.minutes)} × ${DAYS}일 · 쇼츠 ${fmt(d.shorts)}편 (추정치)`;
   const lines = [];
   if (top) lines.push(`${top.name}(${hfmt(top.h)})의 ${(dist / top.h).toFixed(1)}배 길이.`);
   if (next) lines.push(`${next.name} 높이까지 쇼츠 ${fmt(Math.ceil((next.h - dist) / UNIT))}편 남았어요.`);
@@ -690,7 +766,9 @@ function buildResult() {
   const rows = list.slice(Math.max(0, end - 4), Math.min(list.length, end + 2));   // 넘은 4개 + 다음 2개 (한 화면에 맞춤)
   $('ladder').innerHTML = rows.map(o => { const ok = o.h <= dist, nx = o === list[ni];
     return `<li class="${ok ? 'ok' : ''}${nx ? ' next' : ''}"><span class="i">${ok ? '✓' : nx ? '▲' : '·'}</span><span class="n">${o.name}</span><span class="h">${hfmt(o.h)}</span><span class="r">${ok ? '통과' : '+' + fmt(Math.ceil((o.h - dist) / UNIT)) + '편'}</span></li>`; }).join('');
-  $('foot').textContent = `추정치예요. 편수 = 하루 시청 시간 ÷ 쇼츠 1편 평균 ${SEC_PER_SHORT}초 × ${DAYS}일, 길이 = 편수 × 화면 세로 ${SCREEN_CM}cm(6.3인치 폰 기준). 유튜브 시청 기록 기반 정밀 측정은 준비 중이에요.`;
+  $('foot').textContent = d.precise
+    ? `시청 기록에는 쇼츠 표시가 없어서, 다음 영상을 90초 안에 넘긴 시청이 3편 이상 이어진 구간과 제목에 #shorts·#쇼츠가 붙은 영상을 쇼츠로 셌어요(광고·게시물·YouTube Music 제외). 일반 영상을 빠르게 넘겨 본 구간은 쇼츠로 잡힐 수 있어요. 길이 = 편수 × 화면 세로 ${SCREEN_CM}cm.`
+    : `추정치예요. 편수 = 하루 시청 시간 ÷ 쇼츠 1편 평균 ${SEC_PER_SHORT}초 × ${DAYS}일, 길이 = 편수 × 화면 세로 ${SCREEN_CM}cm(6.3인치 폰 기준).`;
 }
 
 /* ===== 이벤트 집계 (PostHog, 스크립트 없이 요청 한 번) ===== */
@@ -751,20 +829,26 @@ function play() {
     const t = Math.max(0, td - DROP_MS); frame(t);
     if (!arrived && t > TL.climbEnd + END_HOLD) {
       arrived = true; playing = false; showArrive(true); buildResult(); setBar('arrived');
-      track('result_view', { minutes: data.minutes, shorts: data.shorts, meters: Math.round(data.dist) });
+      if (data.precise) track('precise_result_view', { shorts: data.shorts, days: data.precise.days, meters: Math.round(data.dist) });   // 개인 기록 내용은 보내지 않음, 숫자만
+      else track('result_view', { minutes: data.minutes, shorts: data.shorts, meters: Math.round(data.dist) });
     }
     if (!arrived) raf = requestAnimationFrame(loop);
   };
   raf = requestAnimationFrame(loop);
 }
 function showStart() { cancelAnimationFrame(raf); raf = 0; playing = false; arrived = false; data = estimate(+sl.value); buildTL(); DROP = H + 40; frame(0); $('intro').classList.remove('off'); $('hud').classList.remove('on'); showArrive(false); setBar('start'); }
-function toTop(after) { $('res').hidden = true; window.scrollTo(0, 0); after(); }
+function toTop(after) { $('res').hidden = true; $('up').hidden = true; sndBtn.hidden = false; window.scrollTo(0, 0); after(); }
 function openDetail() { const r = $('res'); r.hidden = false; r.scrollTop = 0; }
 document.addEventListener('click', e => {
   const a = e.target.closest('[data-act]');
   if (!a) { if (playing && !arrived && e.target.closest('#stage') && !e.target.closest('#snd')) skip = true; return; }   // 음소거 버튼은 건너뛰기 아님
   const act = a.dataset.act;
   if (act === 'go') { startBgm(); data = estimate(+sl.value); toTop(play); }   // 음악은 이 사용자 동작에 맞춰 시작
+  if (act === 'precise') openUp();
+  if (act === 'upBack') closeUp();
+  if (act === 'pick') { primeBgm(); $('file').value = ''; $('file').click(); }   // 파일 선택 창은 이 탭 안에서 바로 열어야 함 (iOS)
+  if (act === 'copyLink') copyLink();
+  if (act === 'msgClose') $('msgModal').hidden = true;
   if (act === 'again') toTop(showStart);                     // 입력 화면으로 (고른 값은 그대로)
   if (act === 'replay') toTop(play);
   if (act === 'result') openDetail();
@@ -832,7 +916,7 @@ function fadeTo(v, sec) {
 function startBgm() {   // 반드시 클릭 같은 사용자 동작 안에서 호출
   bgmWanted = true; if (muted) return;
   ensureGraph(); if (actx && actx.state !== 'running') actx.resume().catch(() => {});
-  if (!bgm.paused) return;   // 이미 재생 중이면(다시 하기 등) 그대로 이어서
+  if (!bgm.paused) { if ((gain ? gain.gain.value : bgm.volume) < 0.01) fadeTo(BGM_VOL, BGM_FADE); return; }   // 이미 재생 중이면(다시 하기 등) 그대로 이어서
   if (gain) gain.gain.value = 0; else bgm.volume = 0;
   const p = bgm.play(); if (p && p.then) p.then(() => fadeTo(BGM_VOL, BGM_FADE)).catch(() => {}); else fadeTo(BGM_VOL, BGM_FADE);
 }
@@ -846,6 +930,81 @@ document.addEventListener('visibilitychange', () => {   // 다른 탭·백그라
 });
 addEventListener('pagehide', () => { if (!bgm.paused) { bgmBgPaused = true; bgm.pause(); } });
 setSndUi();
+function primeBgm() {   // 업로드 버튼 탭(사용자 동작) 때 무음으로 잠깐 재생해 두면, 분석이 끝난 뒤 동작 없이도 재생 가능 (iOS)
+  bgmWanted = true; if (muted || !bgm.paused) return;
+  ensureGraph(); if (actx && actx.state !== 'running') actx.resume().catch(() => {});
+  if (gain) gain.gain.value = 0; else bgm.volume = 0;
+  const p = bgm.play(); if (p && p.then) p.then(() => { if (!bgmLive) bgm.pause(); }).catch(() => {});
+}
+let bgmLive = false;
+
+/* ===== 정밀 측정: 시청 기록 파일 → Worker에서 분석 (파일은 기기 밖으로 안 나감) ===== */
+const MSG = {
+  'not-history': ['유튜브 시청 기록 파일이 아니에요', "테이크아웃에서 받은 zip을 그대로 고르거나, 압축을 푼 '시청 기록.html' 또는 watch-history.json을 골라 주세요."],
+  'broken-zip': ['압축 파일을 열지 못했어요', '파일이 끝까지 받아지지 않았거나 손상됐을 수 있어요. 테이크아웃에서 다시 받아 주세요.'],
+  'broken-json': ['파일을 읽지 못했어요', 'JSON 파일이 손상됐거나 형식이 달라요. 테이크아웃에서 다시 받거나 zip을 그대로 골라 주세요.'],
+  'empty-file': ['빈 파일이에요', '내용이 없는 파일이에요. 테이크아웃에서 받은 zip을 다시 골라 주세요.'],
+  'no-watch': ['시청 기록이 비어 있어요', '유튜브 시청 기록이 꺼져 있었거나 기록이 삭제됐을 수 있어요. 대신 하루 시청 시간으로 재 볼 수 있어요.'],
+  'no-shorts': ['쇼츠로 보이는 시청이 없어요', '기록은 있지만 쇼츠를 연달아 넘긴 구간이 없어요. 쇼츠를 거의 안 보셨거나 기록 기간이 짧을 수 있어요.'],
+  'too-big': ['파일이 너무 커요', "테이크아웃에서 'YouTube 및 YouTube Music'의 '기록'만 골라 다시 내보내 주세요."],
+  'no-worker': ['이 브라우저에선 분석할 수 없어요', 'Safari나 Chrome 같은 기본 브라우저로 열어 다시 해 주세요.'],
+  'unknown': ['분석 중 문제가 생겼어요', '잠시 후 다시 해 주세요. 계속 안 되면 zip 대신 압축을 푼 시청 기록 파일을 골라 보세요.'],
+};
+function showMsg(code) { const [t, b] = MSG[code] || MSG.unknown; $('msgTitle').textContent = t; $('msgBody').textContent = b; $('msgModal').hidden = false; }
+// 업로드 화면 열기/닫기 (입력 화면 = 즉시 추정이 기본, 정밀 측정은 보조 경로)
+const IN_APP = /Instagram|FBAN|FBAV|KAKAOTALK|Line\//i.test(navigator.userAgent);
+function openUp() { $('intro').classList.add('off'); $('up').hidden = false; $('up').scrollTop = 0; sndBtn.hidden = true; }   // 업로드 화면에선 음소거 버튼이 안내 카드를 가리지 않게 숨김
+function closeUp() { $('up').hidden = true; $('intro').classList.remove('off'); sndBtn.hidden = false; }
+if (IN_APP) {
+  $('inappTip').hidden = false;   // iOS 인앱은 외부 브라우저로 강제로 열 방법이 없어 안내만. 안드로이드는 크롬으로 바로 열기
+  if (/Android/i.test(navigator.userAgent)) $('takeoutBtn').href = 'intent://takeout.google.com/settings/takeout/custom/youtube#Intent;scheme=https;package=com.android.chrome;end';
+}
+async function copyLink() {
+  const url = location.origin + location.pathname, b = $('copyBtn'); let ok = false;
+  try { await navigator.clipboard.writeText(url); ok = true; } catch (_) {
+    try { const t = document.createElement('textarea'); t.value = url; t.setAttribute('readonly', ''); t.style.position = 'fixed'; t.style.opacity = '0'; document.body.appendChild(t); t.select(); t.setSelectionRange(0, url.length); ok = document.execCommand('copy'); t.remove(); } catch (_) {}
+  }
+  b.textContent = ok ? '링크를 복사했어요' : url; setTimeout(() => { b.textContent = '이 페이지 링크 복사'; }, 2200);
+}
+const sizeFmt = n => n >= 1048576 ? (n / 1048576).toFixed(1) + 'MB' : Math.max(1, Math.round(n / 1024)) + 'KB';
+function setAnal(p) { if (p === null) { $('anal').classList.remove('on'); return; } $('anal').classList.add('on'); $('analN').textContent = p + '%'; $('analBar').style.width = p + '%'; }
+let worker = null;
+$('file').addEventListener('change', e => {
+  const f = e.target.files && e.target.files[0]; if (!f) return;
+  // 파일 카드: 실제로 고른 파일의 이름·크기 (기록 기간은 분석 후 채움)
+  $('fileIco').dataset.k = (/\.zip$/i.test(f.name) ? 'ZIP' : /\.json$/i.test(f.name) ? 'JSON' : /\.html?$/i.test(f.name) ? 'HTML' : 'FILE');
+  $('fileName').textContent = f.name; $('fileMeta').textContent = `${sizeFmt(f.size)} · 기록 기간 확인 중`; $('fileOk').textContent = '선택됨'; $('fileCard').classList.add('on');
+  $('fileCard').scrollIntoView({ block: 'center' });   // 카드가 화면 아래에 가려지지 않게
+  if (f.size > 1.5 * 1024 * 1024 * 1024) return fail('too-big');
+  if (!window.Worker) return fail('no-worker');
+  if (worker) worker.terminate();
+  try { worker = new Worker('assets/precise-worker.js'); } catch (_) { return fail('no-worker'); }
+  const t0 = performance.now(); setAnal(0);
+  const after = fn => setTimeout(fn, Math.max(0, 1000 - (performance.now() - t0)));   // 너무 빨리 끝나도 진행 막대는 최소 1초
+  function fail(code) { setAnal(null); $('fileOk').textContent = code === 'no-watch' ? '기록 없음' : '읽지 못함'; $('fileMeta').textContent = sizeFmt(f.size); showMsg(code); }
+  worker.onerror = () => { if (worker) worker.terminate(); worker = null; after(() => fail('unknown')); };
+  worker.onmessage = ({ data: m }) => {
+    if (m.type === 'progress') return setAnal(m.p);
+    worker.terminate(); worker = null;
+    if (m.type === 'error') { if (m.format) track('precise_upload', { format: m.format, items: m.items || 0 }); return after(() => fail(m.code)); }
+    const r = m.result;
+    track('precise_upload', { format: r.format, items: r.items });   // 파일 형식·항목 수만
+    setAnal(100);
+    after(() => {
+      setAnal(null);
+      const range = `${kstDate(r.first)}~${kstDate(r.last)}`;
+      $('fileIco').dataset.k = r.format.endsWith('json') ? (r.format.startsWith('zip') ? 'ZIP' : 'JSON') : (r.format.startsWith('zip') ? 'ZIP' : 'HTML');
+      $('fileMeta').textContent = `${sizeFmt(f.size)} · ${range}`;
+      if (!r.shorts) { $('fileOk').textContent = '쇼츠 0편'; return showMsg('no-shorts'); }
+      $('fileOk').textContent = '분석 완료';
+      data = { minutes: null, shorts: r.shorts, dist: r.shorts * SCREEN_CM / 100,
+        precise: { first: r.first, last: r.last, days: r.days, range, format: r.format, watched: r.watched, shortsA: r.shortsA, hintsExtra: r.hintsExtra } };
+      window.__lastPrecise = r;
+      setTimeout(() => { $('fileCard').classList.remove('on'); bgmLive = true; startBgm(); toTop(play); }, 900);   // 기록 기간이 찍힌 카드를 잠깐 보여준 뒤 결과로
+    });
+  };
+  worker.postMessage(f);
+});
 </script>
 </body>
 </html>
