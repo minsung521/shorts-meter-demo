@@ -218,12 +218,11 @@ const OBJECTS = [
   { name: '후지산', h: 3776, kind: 'ground', shape: 'mountain', aspect: 2.6 },
   { name: '킬리만자로', h: 5895, kind: 'ground', shape: 'mountain', aspect: 2.6, peak: 0.698 },
   { name: '에베레스트', h: 8849, kind: 'ground', shape: 'mountain', aspect: 2.0, peak: 0.441 },
-  { name: '여객기 순항고도', short: '여객기', h: 11000, kind: 'float', unit: '여객기 고도' },
+  { name: '여객기 순항고도', short: '여객기', h: 13000, kind: 'float', unit: '여객기 고도' },
   { name: '성층권', h: 12000, kind: 'line' },
-  { name: '적란운', h: 13000, kind: 'float' },
-  { name: '오존층', h: 25000, kind: 'line', lx: 'mid' },   // lx: 라벨 고정 위치 (mid = 가운데, 기본 = 오른쪽). 선끼리 가까워져도 좌우로 갈려 안 겹침
+  { name: '오존층', h: 25000, kind: 'line' },
   { name: '기상 관측 기구', h: 35000, kind: 'float', unit: '기상 관측 기구 고도', fh: 150 },   // fh: 그림 최대 높이(px). 풍선+줄이 세로로 길어서 크게
-  { name: '성층권 낙하 기록', h: 39000, kind: 'float', unit: '성층권 낙하 고도' },
+  { name: '성층권 자유낙하 기록', h: 39000, kind: 'float', unit: '성층권 자유낙하 고도' },
   { name: '성층권 끝', h: 50000, kind: 'line' },          // 맨 위 마무리 (결과 최대 약 47.6km)
 ].sort((a, b) => a.h - b.h);
 const GROUND = OBJECTS.filter(o => o.kind === 'ground');
@@ -235,7 +234,7 @@ const ASTRO = { name: '우주인', kind: 'decor', from: 40000 };   // 40km 이�
 const ASSET_FILES = { '두쫀쿠': 'dujjonku', '우사기': 'usagi', '박수 치는 검은 고양이': 'black-cat', '더피': 'duffy', '석굴암 본존불': 'seokguram',
   '트로이 목마': 'trojan-horse', '누리호': 'nuri', '에펠탑': 'eiffel', '엠파이어 스테이트 빌딩': 'empire-state', '롯데월드타워': 'lotte-tower', '부르즈 할리파': 'burj-khalifa', '스카이다이빙 낙하산': 'parachute',
   '후지산': 'fuji', '한라산': 'obj_hallasan', '백두산': 'obj_baekdusan', '킬리만자로': 'obj_kilimanjaro', '에베레스트': 'obj_everest',
-  '여객기 순항고도': 'obj_airliner', '기상 관측 기구': 'obj_balloon', '성층권 낙하 기록': 'obj_skydiver', '우주인': 'obj_astronaut' };
+  '여객기 순항고도': 'obj_airliner', '기상 관측 기구': 'obj_balloon', '성층권 자유낙하 기록': 'obj_skydiver', '우주인': 'obj_astronaut' };
 // 실사 산 이미지는 맨 아래 = 지면, 맨 위 = 정상으로 잘라 둠 → 이미지 높이 전체가 산 높이. 로딩 전에는 직접 그린 산으로 대신 표시
 for (const o of [...OBJECTS, ASTRO]) {
   const f = ASSET_FILES[o.name]; if (!f) continue;
@@ -333,7 +332,7 @@ function passTime(hh) {                                    // 막대가 hh 높�
   return b;
 }
 function pickShown() {
-  const cands = OBJECTS.filter(o => o.kind !== 'line').sort((a, b) => a.h - b.h);
+  const cands = OBJECTS.filter(o => o.kind !== 'line' && (!TL.unit || o.h <= TL.unit.h || o.h > TL.dist)).sort((a, b) => a.h - b.h);   // 결과 오브젝트 뒤에 지나갈 것은 제외(겹침 방지)
   const passed = GROUND.filter(o => o.h <= TL.dist), must = new Set([passed[passed.length - 1], GROUND.find(o => o.h > TL.dist), ...OBJECTS.filter(o => o.meme && o.h <= TL.dist), TL.unit].filter(Boolean));
   const sel = []; let lastT = -Infinity, lastMust = false;
   for (const o of cands) {
@@ -371,6 +370,53 @@ const yOf = (alt, c) => GY() - (alt - c.base) * c.ppm;
 const altAtY = (y, c) => c.base + (GY() - y) / c.ppm;
 
 /* ===== 그리기 ===== */
+/* ===== 구름 (이미지 없이 코드로 그림. 장식용, 비교 단위 아님) =====
+   흔히 떠올리는 옆으로 넓은 흰 구름. 오브젝트 뒤 배경에 깔리는 가벼운 포인트.
+   실제 크기(m)로 배치해서 상승하며 지나가고, 모양은 시드 고정이라 매번 똑같이 나옴 (캡처 공유 때 일관성) */
+const CLOUD_SEED = 20261108;
+const seeded = seed => { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; };
+// [바닥 고도(m), 가로(m), 가로 위치(화면 비율)] — 약 2km ~ 12km, 위로 갈수록 크게(멀리서도 보이게). 세로는 가로의 약 1/3
+const CLOUDS = [[1900, 1300, 0.66], [2600, 1700, 0.28], [3400, 1800, 0.80], [4400, 2400, 0.40], [5500, 2600, 0.74],
+  [6800, 3200, 0.30], [8200, 3800, 0.66], [9800, 4400, 0.36], [11800, 5000, 0.70]]
+  .map(([base, wm, fx], i) => ({ base, wm, hm: wm * 0.34, fx, i }));
+function cloudSprite(cl) {   // 구름 한 덩어리를 미리 그려 둔 캔버스: 평평한 바닥 + 위로 봉긋한 둥근 덩어리들, 가장자리만 살짝 부드럽게
+  if (cl.sp) return cl.sp;
+  const r = seeded(CLOUD_SEED + cl.i * 97), sw = 320, sh = Math.round(sw * 0.34), oc = document.createElement('canvas');
+  oc.width = sw; oc.height = sh; const g = oc.getContext('2d');
+  const base = sh * 0.86, blobs = [];
+  blobs.push([sw * 0.5, base - sh * 0.02, sw * 0.42, sh * 0.2, 'ell']);   // 납작한 몸통
+  const n = 5 + Math.floor(r() * 2);
+  for (let k = 0; k < n; k++) {   // 윗면의 둥근 덩어리 (가운데가 가장 크게)
+    const u = 0.16 + 0.68 * (k + 0.2 + 0.6 * r()) / n, big = 1 - Math.abs(u - 0.5) * 1.5;
+    const rad = sh * (0.2 + 0.26 * big + 0.06 * r());
+    blobs.push([u * sw, base - rad * (0.75 + 0.15 * r()), rad, rad, 'circ']);
+  }
+  const alt = cl.base + cl.hm * 0.5, tint = mix([255, 255, 255], skyAt(alt), 0.08 + 0.22 * smooth(2000, 12000, alt));   // 위로 갈수록 하늘색이 아주 살짝 섞임
+  g.save(); g.beginPath(); g.rect(0, 0, sw, base); g.clip();   // 바닥은 평평하게
+  for (const [x, y, rx, ry] of blobs) {
+    const gr = g.createRadialGradient(x, y, 0, x, y, Math.max(rx, ry));
+    gr.addColorStop(0, rgb(tint, 1)); gr.addColorStop(0.82, rgb(tint, 1)); gr.addColorStop(1, rgb(tint, 0));   // 안은 또렷, 가장자리만 부드럽게
+    g.fillStyle = gr; g.beginPath(); g.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2); g.fill();
+  }
+  g.restore();
+  const sh2 = g.createLinearGradient(0, base - sh * 0.3, 0, base);   // 아랫면 살짝 그늘 (입체감)
+  sh2.addColorStop(0, 'rgba(120,140,170,0)'); sh2.addColorStop(1, 'rgba(120,140,170,.18)');
+  g.globalCompositeOperation = 'source-atop'; g.fillStyle = sh2; g.fillRect(0, 0, sw, sh);
+  return (cl.sp = oc);
+}
+let cloudLayer = null;
+function drawClouds(c, cut, alpha) {   // 결과 숫자·고도 숫자 영역(cut 위)은 부드럽게 비움
+  if (alpha < 0.02) return;
+  const vis = CLOUDS.filter(cl => { const top = yOf(cl.base + cl.hm, c), bot = yOf(cl.base, c); return bot > cut && top < H && cl.wm * c.ppm >= 8; });
+  if (!vis.length) return;
+  if (!cloudLayer) cloudLayer = document.createElement('canvas');
+  if (cloudLayer.width !== cv.width || cloudLayer.height !== cv.height) { cloudLayer.width = cv.width; cloudLayer.height = cv.height; }
+  const g = cloudLayer.getContext('2d'); g.setTransform(DPR, 0, 0, DPR, 0, 0); g.globalCompositeOperation = 'source-over'; g.clearRect(0, 0, W, H);
+  for (const cl of vis) { const w = cl.wm * c.ppm, hh = cl.hm * c.ppm, bot = yOf(cl.base, c); g.drawImage(cloudSprite(cl), cl.fx * W - w / 2, bot - hh, w, hh); }
+  const m = g.createLinearGradient(0, cut, 0, cut + 70); m.addColorStop(0, 'rgba(0,0,0,0)'); m.addColorStop(1, 'rgba(0,0,0,1)');
+  g.globalCompositeOperation = 'destination-in'; g.fillStyle = m; g.fillRect(0, 0, W, H); g.globalCompositeOperation = 'source-over';
+  ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = alpha * 0.92; ctx.drawImage(cloudLayer, 0, Math.round(DROP * DPR)); ctx.restore();
+}
 const STARS = Array.from({ length: 70 }, (_, i) => { const r = Math.sin(i * 12.9898) * 43758.5453; const q = Math.sin(i * 78.233) * 12345.678; return { x: r - Math.floor(r), y: (q - Math.floor(q)) * 0.85, s: 0.8 + ((i * 7) % 5) * 0.45 }; });
 function drawSky(c) {
   const g = ctx.createLinearGradient(0, 0, 0, H), N = 18;
@@ -446,7 +492,18 @@ function stickerBox(name, sub, cx, bottomY, minL = 0) {   // 라벨이 놓일 �
   const w = Math.max(w1, w2) + 22, h = 48; cx = Math.max(w / 2 + 6, minL + w / 2, Math.min(W - w / 2 - 6, cx));   // 화면 밖으로 안 나가게
   return { cx, w, h, x0: cx - w / 2, x1: cx + w / 2, y0: bottomY - h, y1: bottomY };
 }
-function sticker(name, sub, cx, bottomY, alpha = 1, rot = -0.05, minL = 0) {   // 손으로 붙인 라벨 (이름 19px, 높이 15px). minL: 라벨 왼쪽 끝이 이보다 왼쪽으로 못 오게 (핀과 겹침 방지)
+let LBL = null;   // 프레임 중엔 라벨을 모아 두었다가 구름을 그린 뒤 맨 위에 그림 (구름이 라벨을 가리지 않게)
+function miniTag(name, sub, y, alpha = 1) {   // 경계선 라벨: 막대 왼쪽 빈 띠(오브젝트가 지나가지 않는 곳)에 작게, 위치 고정
+  if (alpha < 0.03) return;
+  ctx.save(); ctx.globalAlpha = alpha; ctx.font = '12px Jua'; const w1 = ctx.measureText(name).width; ctx.font = '700 11px Gaegu'; const w2 = ctx.measureText(sub).width;
+  const w = Math.max(w1, w2) + 10, h = 30, x0 = 6, y0 = y - h - 3;
+  ctx.fillStyle = 'rgba(255,248,234,.94)'; rr(x0, y0, w, h, 7); ctx.fill(); ctx.strokeStyle = INK; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.textAlign = 'center'; ctx.fillStyle = INK; ctx.font = '12px Jua'; ctx.fillText(name, x0 + w / 2, y0 + 13);
+  ctx.fillStyle = ACC; ctx.font = '700 11px Gaegu'; ctx.fillText(sub, x0 + w / 2, y0 + 25);
+  ctx.restore();
+}
+function sticker(name, sub, cx, bottomY, alpha = 1, rot = -0.05, minL = 0) {
+  if (LBL) { LBL.push(() => sticker(name, sub, cx, bottomY, alpha, rot, minL)); return; }   // 손으로 붙인 라벨 (이름 19px, 높이 15px). minL: 라벨 왼쪽 끝이 이보다 왼쪽으로 못 오게 (핀과 겹침 방지)
   if (alpha < 0.03) return;
   const bx = stickerBox(name, sub, cx, bottomY, minL), w = bx.w, h = bx.h; cx = bx.cx;
   ctx.save(); ctx.globalAlpha = alpha;
@@ -509,11 +566,13 @@ function frame(t) {
   if (DROP > 0.5) ctx.translate(0, DROP);
   // 도착 무렵엔 비교 단위 오브젝트 하나만 남기고 나머지(다른 오브젝트·경계선·우주인)는 흐려서 없앰
   const solo = 1 - smooth(TL.climbEnd - 300, TL.climbEnd + END_HOLD * 0.7, t);
-  // 경계선: 라벨 자리는 선마다 고정 (성층권·성층권 끝 = 오른쪽, 오존층 = 가운데)
+  drawClouds(c, topCut(c, h), solo);   // 구름: 오브젝트 뒤 배경에 깔림
+  LBL = [];
+  // 경계선: 점선 + 막대 왼쪽 작은 라벨 (위치 고정)
   if (solo > 0.02) for (const o of OBJECTS) if (o.kind === 'line') {
     const y = yOf(o.h, c); if (y < topCut(c, h) + 20 || y > Math.min(gy, H) - 12) continue;
     ctx.save(); ctx.globalAlpha = solo; ctx.setLineDash([7, 6]); ctx.strokeStyle = rgb(inkOn(skyAt(o.h)), 0.6); ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); ctx.restore();
-    sticker(o.name, hfmt(o.h), o.lx === 'mid' ? W * 0.56 : W - 70, y - 6, solo, o.lx === 'mid' ? 0.03 : -0.03);
+    LBL.push(() => miniTag(o.name, hfmt(o.h), y, solo));
   }
   // 떠 있는 오브젝트 (실사 이미지, 보기 좋은 고정 크기). 라벨은 그림 위에 고정, 비교 단위만 결과 화면 기준으로 한 번 정한 자리
   for (const o of OBJECTS) if (o.kind === 'float' && TL.shown.has(o)) {
@@ -528,16 +587,16 @@ function frame(t) {
       const nm = o.name, sub = hfmt(o.h), side = isUnit ? unitSide(o, x, fw, fh, stickerBox(nm, sub, x, 0).w) : 'above';
       if (side === 'right') sticker(nm, sub, x + fw / 2 + stickerBox(nm, sub, x, 0).w / 2 + 6, y + 24, fa, 0.04, BARX() + 36);
       else if (side === 'below') sticker(nm, sub, x, y + fh / 2 + 52, fa, 0.04, BARX() + 36);
-      else sticker(nm, sub, x, y - fh / 2 - 6, fa, 0.04, BARX() + 36);
+      else sticker(nm, sub, x, Math.max(TOP_PAD - 10, y - fh / 2 - 6), fa, 0.04, BARX() + 36);
       continue;
     }
-    sticker(o.name, hfmt(o.h), Math.max(W * 0.6, BARX() + 100), y, fa, 0.04, BARX() + 36);   // 그림 없는 것(적란운)은 라벨만
+    sticker(o.name, hfmt(o.h), Math.max(W * 0.6, BARX() + 100), y, fa, 0.04, BARX() + 36);   // 그림이 아직 안 불러와진 것은 라벨만
   }
   // 우주인: 결과가 40km 이상일 때 상승 중에만 오른쪽 위에 둥실 (장식, 도착하면 사라짐)
   if (ASTRO.img && TL.dist >= ASTRO.from) {
     const a = smooth(ASTRO.from, ASTRO.from + 2500, h) * solo;
     if (a > 0.02) {
-      const ah = 54, aw = ah * ASTRO.img.naturalWidth / ASTRO.img.naturalHeight, ax = W - aw / 2 - 6, ay = topCut(c, h) + 8 + ah / 2;
+      const ah = 46, aw = ah * ASTRO.img.naturalWidth / ASTRO.img.naturalHeight, ax = W - aw / 2 - 4, ay = topCut(c, h) + 8 + ah / 2;
       ctx.save(); ctx.globalAlpha = a; ctx.translate(ax, ay + Math.sin(t / 700) * 3); ctx.rotate(-0.18); ctx.drawImage(ASTRO.img, -aw / 2, -ah / 2, aw, ah); ctx.restore();
     }
   }
@@ -559,7 +618,7 @@ function frame(t) {
       if (fold < 0.02) continue;
       drawFold(isTop ? { ...o, aspect: asp } : o, xImg, gy, hPx, alpha, fold, down);
     } else {                                            // 기본: 오른쪽에서 튀어나오고, 넘으면 바로 흐려짐
-      if (p > 1 && !isTop) { const lv = TL.leaveT.get(o) ?? TL.passT.get(o) + 60; alpha *= 1 - smooth(lv, lv + FADE_MS, t); }   // 넘은 뒤 다음 오브젝트가 들어오면 흐려져 사라짐
+      if (p > 1 && o !== TL.unit) { const lv = TL.leaveT.get(o) ?? TL.passT.get(o) + 60; alpha *= 1 - smooth(lv, lv + FADE_MS, t); }   // 넘은 뒤 다음 오브젝트가 들어오면 흐려져 사라짐
       drawObj(isTop ? { ...o, aspect: asp } : o, xImg, gy, hPx, alpha);
     }
     const rival = o === next && (p > 0.35 || o.h <= 0.1);
@@ -571,6 +630,7 @@ function frame(t) {
   }
   // 땅
   if (gy < H) { ctx.fillStyle = '#A3B86C'; ctx.fillRect(0, gy, W, H - gy); ctx.fillStyle = INK; ctx.fillRect(0, gy - 1.5, W, 3); }
+  { const q = LBL; LBL = null; for (const f of q) f(); }   // 라벨은 오브젝트 위에
   // 막대 + 폰/핀
   drawBar(h, c);
   const phoneA = smooth(22, 34, devH);
